@@ -193,7 +193,7 @@ var Coach = (function () {
     var s = {
       heute: d, phase: phase ? phase.name : '', woche: t ? t.wocheNr : null,
       gewicht: m[d] || null, tief: t && t.low ? t.low.kg : null, plan: t ? t.plan : null, delta: t ? t.delta : null,
-      ziel: t ? t.path.kg : null, anlass: t ? t.path.anlass : '', tageBis: t ? t.tageBis : null,
+      ziel: t ? t.path.kg : null, start: t ? t.path.pts[0][1] : null, anlass: t ? t.path.anlass : '', tageBis: t ? t.tageBis : null,
       rate: r.ready ? r.rate : null, urteil: v ? v.key : null, urteilText: v ? v.text : '',
       kraftWoche: kraftW.length, letzteKraft: last ? last.d : null, naechste: nextType, trainingFaellig: faellig,
       fussballHeute: fussball, essenOffen: essenOffen, feier: feier, nachFeier: nach,
