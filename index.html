@@ -526,6 +526,14 @@ a.btn{text-decoration:none}
 .wpick b{font-size:15px}.wpick small{font-size:11px;color:var(--ink-3)}.wpick i{height:16px;color:var(--ink-3)}
 .wpick button.on{background:var(--accent);color:var(--accent-ink)}.wpick button.on small,.wpick button.on i{color:inherit;opacity:.85}
 .wpick button[disabled]{opacity:.35}
+.tbl2{display:grid}
+.tbrow{display:grid;grid-template-columns:48px 1fr 16px;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line);text-align:left;width:100%}
+.tbrow:first-child{border-top:0}
+.tbrow img,.tbph{width:48px;height:64px;border-radius:10px;object-fit:cover;background:var(--surface-2);display:grid;place-items:center;color:var(--ink-3)}
+.tbrow b{display:block;font-weight:600;font-size:15px}.tbrow small{display:block;font-size:13px;color:var(--ink-3);line-height:1.35}
+.tbrow>.ic:last-child{color:var(--ink-3)}
+.tbfoto{display:grid;gap:8px;justify-items:center}.tbfoto img{width:100%;max-height:52vh;object-fit:contain;border-radius:16px;background:var(--surface-2)}
+.tbnote{font-size:16px;line-height:1.55;background:var(--surface);border-radius:16px;padding:14px 16px;box-shadow:var(--shadow)}
 .fgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .fthumb{display:grid;gap:4px;font-size:11px;color:var(--ink-3);text-align:center}
 .fthumb img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:12px;background:var(--surface-2);display:block}
@@ -916,14 +924,36 @@ async function shrinkFoto(file){
   let src;try{src=await createImageBitmap(file,{imageOrientation:'from-image'})}catch(e){src=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=URL.createObjectURL(file)})}
   const w=src.width,h=src.height,k=Math.min(1,1280/Math.max(w,h)),c=document.createElement('canvas');c.width=Math.round(w*k);c.height=Math.round(h*k);c.getContext('2d').drawImage(src,0,0,c.width,c.height);
   return await new Promise(r=>c.toBlob(r,'image/jpeg',0.82))}
-function fotoDue(){const l=LS.get('foto-last',null);return !l||diffD(l,TODAY)>=28}
+/** Alle zwei Wochen ein Foto und ein Tagebuch-Eintrag. Fällig, wenn beides länger als 13 Tage her ist. */
+const TB=()=>(S.state&&S.state.tagebuch)||[];
+const fotoSeit=()=>{const l=[LS.get('foto-last',null)].concat(TB().map(x=>x.d)).filter(Boolean).sort().pop();return l?diffD(l,TODAY):null};
+function fotoDue(){const g=fotoSeit();return g==null||g>=14}
+/** Rückblick auf die zwei Wochen bis zu einem Tag, als kurzer Text fürs Tagebuch */
+function zweiWochen(end){
+  const from=addD(end,-13),mid=addD(end,-7),inR=d=>d>=from&&d<=end;
+  const a=avg(WT.filter(p=>p.d>=from&&p.d<=mid&&p.v!=null).map(p=>p.v)),b=avg(WT.filter(p=>p.d>mid&&p.d<=end&&p.v!=null).map(p=>p.v));
+  const kraft=SESS.filter(x=>inR(x.d)).length,fb=ACT.filter(x=>inR(x.d)&&x.type==='F').length,lauf=ACT.filter(x=>inR(x.d)&&x.type==='L').length;
+  const ds=DAYS.filter(x=>inR(x.date)),essen=ds.filter(x=>x.n>0).length,extra=sum(ds.map(x=>+x.kcalExtra||0));
+  const feiern=new Set();for(const e of EVENTS)if(e.art==='feier'&&e.s>=from&&e.s<=end)feiern.add(dm(e.s)+' '+e.t);for(const x of ds)if(x.feier)feiern.add(dm(x.date));
+  const schwach=[...Array(14)].map((_,i)=>addD(end,-i)).filter(d=>{const c=d===TODAY?S.day.check:(DAYS.find(x=>x.date===d)||{}).check;const r=readiness(c);return r&&r.level==='schwach'}).length;
+  const out=[];
+  if(a!=null&&b!=null)out.push(`Gewicht: Schnitt ${nf(a)} auf ${nf(b)} kg (${Math.abs(b-a)<0.05?'±0,0':sgn(b-a)}).`);else if(b!=null)out.push(`Gewicht: Schnitt ${nf(b)} kg.`);
+  out.push(`Training: ${kraft} Kraft${fb?', '+fb+' Fußball':''}${lauf?', '+lauf+' Laufen':''}.`);
+  out.push(`Essen an ${essen} von 14 Tagen eingetragen${extra?', Abweichungen '+nf(extra,0)+' kcal':''}.`);
+  if(feiern.size)out.push('Feiern: '+[...feiern].slice(0,4).join(', ')+'.');
+  if(schwach)out.push(`${schwach} ${schwach===1?'Tag':'Tage'} mit schwacher Erholung.`);
+  return out.join(' ');
+}
+const fotoAt=d=>{const f=FOTOS||[];let best=null;for(const x of f){const g=Math.abs(diffD(x.d,d));if(g<=3&&(!best||g<Math.abs(diffD(best.d,d))))best=x}return best};
 function fotoCard(){
-  const f=FOTOS||[],last=f.slice(-3).reverse();
-  return `<div class="sec-t"><h3>Fotos</h3><small>nur auf diesem Handy</small></div><article class="card">
-    ${f.length?`<div class="fgrid">${last.map(x=>`<button class="fthumb" data-act="fotos" data-a="${f[0].id}" data-b="${x.id}" aria-label="Foto vom ${dm(x.d)} ansehen"><img src="${x.url}" alt=""><span>${dm(x.d)}${wAt(x.d)&&wAt(x.d).v!=null?' · '+nf(wAt(x.d).v)+' kg':''}</span></button>`).join('')}</div>`
-      :`<p class="sub" style="margin:0">Einmal im Monat ein Foto, gleiche Stelle, gleiches Licht, morgens. Nach drei Monaten siehst du, was die Waage nicht zeigt.</p>`}
-    <div class="two"><button class="btn btn-p" data-act="foto">${ic('plus',18)}Foto aufnehmen</button>${f.length>=2?`<button class="btn btn-s" data-act="fotos" data-a="${f[0].id}" data-b="${f[f.length-1].id}">Vergleichen</button>`:'<span></span>'}</div>
-    <p class="sub" style="margin:0;font-size:13px">Die Fotos bleiben in der App auf diesem Handy und gehen nicht ins Sheet. Löschst du die App, sind sie weg.</p></article>`}
+  const f=FOTOS||[],tb=TB().slice().sort((a,b)=>a.d<b.d?1:-1);
+  const dates=[...new Set(tb.map(x=>x.d).concat(f.map(x=>x.d)))].sort().reverse().slice(0,6);
+  return `<div class="sec-t"><h3>Fotos und Tagebuch</h3><small${fotoDue()?' style="color:var(--accent);font-weight:700"':''}>${fotoDue()?'jetzt fällig':'alle zwei Wochen'}</small></div><article class="card">
+    ${dates.length?`<div class="tbl2">${dates.map(d=>{const e=tb.find(x=>x.d===d),ph=fotoAt(d);return `<button class="tbrow" data-act="tbshow" data-d="${d}" aria-label="Eintrag vom ${dm(d)} öffnen">
+      ${ph?`<img src="${ph.url}" alt="">`:`<span class="tbph">${ic('note',18)}</span>`}<span><b>${fmtD(d)}</b><small>${esc((e&&e.note)||(e&&e.sum)||'Nur Foto').slice(0,90)}</small></span>${ic('right',16)}</button>`}).join('')}</div>`
+      :`<p class="sub" style="margin:0">Alle zwei Wochen ein Foto und ein paar Sätze, wie es lief. Den Rückblick mit Gewicht, Training und Essen schreibt Kompass dazu. Nach ein paar Monaten siehst du, was die Waage nicht zeigt.</p>`}
+    <div class="two"><button class="btn btn-p" data-act="tagebuch">${ic('plus',18)}${fotoDue()?'Jetzt eintragen':'Neuer Eintrag'}</button>${f.length>=2?`<button class="btn btn-s" data-act="fotos" data-a="${f[0].id}" data-b="${f[f.length-1].id}">Fotos vergleichen</button>`:'<span></span>'}</div>
+    <p class="sub" style="margin:0;font-size:13px">Die Fotos bleiben nur auf diesem Handy, löschst du die App, sind sie weg. Der Text landet in deinem Sheet im Tab „App_Tagebuch“.</p></article>`}
 
 /* ============ Coach: Fragen, die man im Studio oder in der Küche hat ============ */
 const COACHQ={
@@ -1074,7 +1104,7 @@ function hinweise(L){
   const next=nextPhase(TODAY);if(next&&diffD(TODAY,next.s)<=14)add('neutral','cal',`<b>${esc(next.n)} ab ${dm(next.s)}.</b> Danach gilt dein Plan aus „${esc(next.tab)}“.`,tapTo('essen','Essen öffnen'),5);
   const wm=wpTarget();if(!WP(wm)&&(dO(TODAY).getUTCDay()===0||dO(TODAY).getUTCDay()<=2))add('accent','cal',`<b>${wm>monday(TODAY)?'Plan die neue Woche.':'Plan diese Woche.'}</b> Wähl deine Trainingstage, dann erinnert dich Kompass genau dann.`,` data-act="wplan" data-m="${wm}" role="button" tabindex="0" aria-label="Woche planen"`,dO(TODAY).getUTCDay()===0?1:2);
   if(L.deload.why)add('accent','bolt',`<b>Zeit für eine Entlastungswoche.</b> ${esc(L.deload.why)}.`,` data-act="coach" data-c="training" data-q="deload" role="button" tabindex="0" aria-label="Entlastungswoche ansehen"`,2);
-  if(fotoDue()&&hourNow()<12)add('neutral','plus','<b>Zeit für dein Monatsfoto.</b> Gleiche Stelle, gleiches Licht, dauert eine Minute.',` data-act="foto" role="button" tabindex="0" aria-label="Foto aufnehmen"`,4);
+  if(fotoDue())add('neutral','note','<b>Zeit für Foto und Tagebuch.</b> Ein Foto und ein paar Sätze zu den letzten zwei Wochen.',` data-act="tagebuch" role="button" tabindex="0" aria-label="Foto und Tagebuch"`,(fotoSeit()||0)>=17?2:3);
   return out.sort((a,b)=>a.prio-b.prio).slice(0,2);
 }
 function morgenCheck(){const c=S.day.check;
@@ -1445,6 +1475,24 @@ function vSheet(){
     <div class="sub">${sh.days.length?`${sh.days.length} ${sh.days.length===1?'Tag':'Tage'}: ${sh.days.slice().sort().map(d=>WDL[dO(d).getUTCDay()]).join(', ')}`:'Noch kein Tag gewählt.'}${sh.days.length>=2&&sh.days.slice().sort().some((d,i,a)=>i&&diffD(a[i-1],d)<2)?' · Zwei Tage direkt hintereinander gehen, mit Pause dazwischen erholst du dich besser.':''}</div>
     <button class="btn btn-p wide" data-act="wpsave" ${sh.days.length?'':'disabled'}>Plan speichern</button>`;
   }
+  if(sh.type==='tagebuch'){
+    const ph=(FOTOS||[]).filter(x=>x.d===sh.d).pop(),old=TB().find(x=>x.d===sh.d),sumT=old&&old.sum&&sh.d!==TODAY?old.sum:zweiWochen(sh.d);label='Foto und Tagebuch';
+    body=`<div class="sheet-h"><div><div class="eyebrow">${fmtD(addD(sh.d,-13))} bis ${fmtD(sh.d)}</div><h3>Zwei Wochen</h3></div><button class="iconbtn" data-act="close" aria-label="Schließen">${ic('x',22)}</button></div>
+    ${ph?`<div class="tbfoto"><img src="${ph.url}" alt="Foto vom ${dm(ph.d)}"><button class="btn btn-s sm" data-act="foto">Neu aufnehmen</button></div>`
+      :sh.d===TODAY?`<button class="btn btn-s wide" data-act="foto">${ic('plus',18)}Foto aufnehmen</button><p class="sub" style="margin:-8px 0 0;font-size:13px">Gleiche Stelle, gleiches Licht, morgens. Von vorn und von der Seite, wenn du magst.</p>`:''}
+    <div class="coach c-neutral"><b>Rückblick von Kompass</b><span>${esc(sumT)}</span></div>
+    <label class="fld"><span>Wie liefen die zwei Wochen?</span><textarea id="tb-note" class="notebox" rows="5" placeholder="Was lief gut, was war schwer, wie fühlst du dich? Ein paar Stichworte reichen.">${esc(sh.note)}</textarea></label>
+    <div class="chips">${['Lief gut','War stressig','Wenig Schlaf','Viel unterwegs','Fühle mich stärker','Knie ruhig'].map(t=>`<button data-act="tbchip" data-t="${t}">${t}</button>`).join('')}</div>
+    <button class="btn btn-p wide" data-act="tbsave">Eintrag speichern</button>`;
+  }
+  if(sh.type==='tbshow'){
+    const e=TB().find(x=>x.d===sh.d),ph=fotoAt(sh.d);label='Eintrag vom '+dm(sh.d);
+    body=`<div class="sheet-h"><div><div class="eyebrow">Tagebuch</div><h3>${fmtD(sh.d)}</h3></div><button class="iconbtn" data-act="close" aria-label="Schließen">${ic('x',22)}</button></div>
+    ${ph?`<div class="tbfoto"><img src="${ph.url}" alt="Foto vom ${dm(ph.d)}">${(FOTOS||[]).length>=2?`<button class="btn btn-s sm" data-act="fotos" data-a="${FOTOS[0].id}" data-b="${ph.id}">Mit dem ersten Foto vergleichen</button>`:''}</div>`:''}
+    ${e&&e.sum?`<div class="coach c-neutral"><b>Rückblick von Kompass</b><span>${esc(e.sum)}</span></div>`:''}
+    ${e&&e.note?`<div class="tbnote">${esc(e.note).replace(/\n/g,'<br>')}</div>`:'<p class="sub" style="margin:0">Zu diesem Tag gibt es nur ein Foto.</p>'}
+    <button class="btn btn-s wide" data-act="tagebuch" data-d="${sh.d}">${e?'Bearbeiten':'Notiz dazuschreiben'}</button>`;
+  }
   if(sh.type==='fotos'){
     const f=FOTOS||[],a=f.find(x=>x.id===sh.a)||f[0],b=f.find(x=>x.id===sh.b)||f[f.length-1];label='Fotos vergleichen';
     const opt=sel=>f.map(x=>`<option value="${x.id}" ${x.id===sel.id?'selected':''}>${dm(x.d)}${String(x.d).slice(0,4)!==TODAY.slice(0,4)?String(x.d).slice(0,4):''}</option>`).join('');
@@ -1657,7 +1705,14 @@ const A={
  deloadStart:()=>{LS.set('deload',{start:TODAY});LS.set('deload-skip',null);S.sheet=null;render();toast('Entlastungswoche bis '+dm(addD(TODAY,6)))},
  deloadEnd:()=>{LS.set('deload',null);S.sheet=null;render();toast('Entlastung beendet')},
  deloadSkip:()=>{LS.set('deload-skip',TODAY);S.sheet=null;render();toast('Ich frage in zwei Wochen wieder')},
- foto:()=>{const i=document.createElement('input');i.type='file';i.accept='image/*';
+ tagebuch:d=>{const day=d.d||TODAY,e=TB().find(x=>x.d===day);S.sheet={type:'tagebuch',d:day,note:e?e.note:''};render()},
+ tbshow:d=>{S.sheet={type:'tbshow',d:d.d};render()},
+ tbchip:d=>{const t=document.getElementById('tb-note');const v=(t?t.value:S.sheet.note).trim();S.sheet.note=v?(v.endsWith('.')||v.endsWith(',')?v+' ':v+'. ')+d.t:d.t;render();const n=document.getElementById('tb-note');if(n){n.focus();n.selectionStart=n.selectionEnd=n.value.length}},
+ tbsave:()=>{const sh=S.sheet,t=document.getElementById('tb-note'),note=(t?t.value:sh.note).trim(),old=TB().find(x=>x.d===sh.d);
+   const sum_=old&&old.sum&&sh.d!==TODAY?old.sum:zweiWochen(sh.d);if(!note&&!(FOTOS||[]).some(x=>x.d===sh.d)){if(t)t.focus();return}
+   const st=S.state;st.tagebuch=(st.tagebuch||[]).filter(x=>x.d!==sh.d).concat([{d:sh.d,note,sum:sum_}]);LS.set('state',st);
+   enqueue('saveDiary',[sh.d,note,sum_],'tb-'+sh.d);S.sheet=null;render();toast('Eintrag gespeichert')},
+ foto:()=>{if(S.sheet&&S.sheet.type==='tagebuch'){const t=document.getElementById('tb-note');if(t)S.sheet.note=t.value}const i=document.createElement('input');i.type='file';i.accept='image/*';
    i.onchange=async()=>{const file=i.files&&i.files[0];if(!file)return;toast('Foto wird gespeichert …');
      try{const b=await shrinkFoto(file);await FDB.put({id:'f'+Date.now().toString(36),d:TODAY,b});try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
        await loadFotos();render();toast('Foto gespeichert, nur auf diesem Handy')}catch(e){toast('Foto konnte nicht gespeichert werden: '+(e.message||e),true)}};
@@ -1739,7 +1794,7 @@ const A={
 /** Weicher Übergang zwischen Ansichten, wo das Handy es kann. Kachel und Detail teilen sich den Namen vt-… */
 function withVT(fn){if(document.startViewTransition&&!matchMedia('(prefers-reduced-motion: reduce)').matches){try{const t=document.startViewTransition(fn);[t.ready,t.finished,t.updateCallbackDone].forEach(p=>p&&p.catch(()=>{}));return}catch(e){}}fn()}
 document.addEventListener('click',e=>{const t=e.target.closest('[data-act]');if(!t)return;const f=A[t.dataset.act];if(f){e.preventDefault();try{if(navigator.vibrate&&t.dataset.act!=='close'&&(!navigator.userActivation||navigator.userActivation.isActive))navigator.vibrate(6)}catch(x){}f(t.dataset,e)}});
-document.addEventListener('input',e=>{const t=e.target;if(t.id==='cmp-x'&&S.sheet){S.sheet.x=+t.value;const a=document.querySelector('.cmp-a'),l=document.querySelector('.cmp-l');if(a)a.style.clipPath='inset(0 '+(100-t.value)+'% 0 0)';if(l)l.style.left=t.value+'%';return}if(t.dataset&&t.dataset.input==='note'&&S.session){curEx().note=t.value;persistSession()}});
+document.addEventListener('input',e=>{const t=e.target;if(t.id==='tb-note'&&S.sheet){S.sheet.note=t.value;return}if(t.id==='cmp-x'&&S.sheet){S.sheet.x=+t.value;const a=document.querySelector('.cmp-a'),l=document.querySelector('.cmp-l');if(a)a.style.clipPath='inset(0 '+(100-t.value)+'% 0 0)';if(l)l.style.left=t.value+'%';return}if(t.dataset&&t.dataset.input==='note'&&S.session){curEx().note=t.value;persistSession()}});
 document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.classList&&e.target.classList.contains('tap')){e.preventDefault();e.target.click();return}if(e.key==='Escape'&&S.sheet){S.sheet=null;render()}if(e.key==='Enter'&&e.target.id==='w-input')A.savew();if(e.key==='Enter'&&e.target.id==='u-input')A.usave();if(e.key==='Enter'&&(e.target.id==='x-k'||e.target.id==='x-t'))A.xsave()});
 document.addEventListener('change',e=>{const t=e.target;if(t.dataset&&t.dataset.sel&&S.sheet&&S.sheet.type==='fotos'){S.sheet[t.dataset.sel]=t.value;S.sheet.confirm=null;render()}});
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){tick();flush();if(S.state&&!S.inSession&&!S.sheet)reload(true)}});
