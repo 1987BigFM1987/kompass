@@ -1,6 +1,6 @@
 /* Kompass · Offline-Speicher. Die App startet aus dem Cache und holt Updates im Hintergrund. */
-const V = 'ft-3';
-const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-512.png'];
+const V = 'ft-4';
+const SHELL = ['./', './index.html', './coach.js', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-512.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(V).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
