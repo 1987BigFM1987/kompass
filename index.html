@@ -1137,7 +1137,7 @@ function hcCard(sh){const h=S.state.hc||{},hl=h.last?new Date(h.last):null;
       <button class="btn btn-p wide sm" data-act="hccopy">${ic('check',18)}Adresse kopieren</button>
       <p class="sub" style="margin:0;font-size:13px">In HC Webhook einen Webhook anlegen und die Adresse einfügen. Datenarten: Schlaf, Herzfrequenz, Ruheherzfrequenz, Herzfrequenzvariabilität, Sauerstoffsättigung, Schritte und Training. Alle 30 Minuten senden reicht. Beim Puls am besten Mittelwerte je Minute statt jeder Einzelmessung. Die Adresse enthält deinen Schlüssel, gib sie nicht weiter.</p>`
       :`<button class="btn btn-s wide sm" data-act="hcurl">${ic('sync',18)}${h.on?'Adresse nochmal anzeigen':'Adresse für HC Webhook erzeugen'}</button>`}</article>`}
-function morgenCheck(){const c=S.day.check,g=ghAt(TODAY),sv=schlafStufe(g);if(c.schlaf==null&&sv!=null)c.schlaf=sv;
+function morgenCheck(){const c=S.day.check,g=ghAt(TODAY),sv=schlafStufe(g);if(c.schlaf==null&&sv!=null){c.schlaf=sv;setTimeout(saveDay,0)}
   return `<article class="card mcheck"><div class="card-h"><span class="eyebrow">Wie fit bist du heute?</span><span class="sub" style="font-size:12px">3 Tipps</span></div>
     ${g&&g.schlaf?`<p class="sub" style="margin:0;font-size:13px">Laut Uhr: ${hmin(g.schlaf)} h Schlaf${g.tief?', '+hmin(g.tief)+' h Tiefschlaf':''}${g.rhr?', Ruhepuls '+g.rhr:g.nacht?', Puls nachts '+g.nacht:''}${g.von?', '+g.von+' bis '+g.bis+' Uhr':''}.</p>`:''}
     ${CHECKQ.map(([k,l,o])=>`<div class="mrow3"><span>${l}</span><div class="seg3" role="group" aria-label="${l}">${o.map((t,i)=>`<button class="${c[k]===i?'on v'+i:''}" data-act="chk" data-k="${k}" data-v="${i}" aria-pressed="${c[k]===i}">${t}</button>`).join('')}</div></div>`).join('')}</article>`}
@@ -1611,8 +1611,9 @@ function vSheet(){
     <div class="chips">${[['gut','Gut'],['zwickt','Zwickt'],['schmerzt','Schmerzt']].map(([x,l])=>`<button class="${sh.knie===x?'on':''}" data-act="actset" data-f="knie" data-v="${x}" aria-pressed="${sh.knie===x}">${l}</button>`).join('')}</div>
     ${sh.knie==='schmerzt'?`<div class="coach c-warn"><b>Bitte im Blick behalten</b><span>Bei Schwellung, Wegknicken oder Schmerz bei Drehbewegungen zum Orthopäden. Bis dahin keine Sprünge und Beinpresse gegen Step-downs tauschen.</span></div>`:''}
     <textarea class="notebox" id="act-note" placeholder="Notiz, zum Beispiel: Halle, viel gesprintet">${esc(sh.note||'')}</textarea>
+    ${(S.state.sessions||[]).some(x=>x.d===sh.d&&x.plan===sh.k&&/^uhr-/.test(x.id))?`<div class="coach c-accent"><b>Schon von der Uhr eingetragen</b><span>Für diesen Tag hat Kompass ${k==='F'?'Fußball':'einen Lauf'} von der Uhr übernommen. Speichern legt einen zweiten Eintrag an.</span></div>`:''}
     <button class="btn btn-p wide" data-act="actsave">Speichern</button>
-    <div class="foot">${ic('sync',16)}Landet in „Trainingspläne › App_Einheiten“ und zählt als Trainingstag.</div>`;
+    <div class="foot">${ic('sync',16)}Landet in „Trainingspläne › App_Einheiten“ und zählt als Trainingstag.${k==='L'?' Läufe, die du auf der Uhr startest, trägt Kompass selbst ein.':''}</div>`;
   }
   if(sh.type==='extra'){
     label='Eigene Abweichung';
