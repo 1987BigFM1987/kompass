@@ -189,13 +189,17 @@ var Coach = (function () {
     var day = o.day || null, essenOffen = !day || !(day.n > 0 || day.kcalExtra > 0 || day.plan);
     var feier = nextFeier(o.events, d), nach = afterFeier(o.events, d);
     var seit = last ? diff(last.d, d) : null;
-    var faellig = kraftW.length < 2 && !heuteSport.length && !fussball && (seit == null || seit >= 2) && wday(d) !== 0;
+    // Mit Wochenplan zählen nur die geplanten Tage, sonst die alte Faustregel
+    var wp = o.wochenplan && o.wochenplan.length ? o.wochenplan : null;
+    var heuteKraft = heuteSport.some(function (s) { return /^[AB]/.test(s.plan); });
+    var faellig = wp ? (wp.indexOf(d) >= 0 && !heuteKraft && kraftW.length < 2)
+      : (kraftW.length < 2 && !heuteSport.length && !fussball && (seit == null || seit >= 2) && wday(d) !== 0);
     var s = {
       heute: d, phase: phase ? phase.name : '', woche: t ? t.wocheNr : null,
       gewicht: m[d] || null, tief: t && t.low ? t.low.kg : null, plan: t ? t.plan : null, delta: t ? t.delta : null,
       ziel: t ? t.path.kg : null, start: t ? t.path.pts[0][1] : null, anlass: t ? t.path.anlass : '', tageBis: t ? t.tageBis : null,
       rate: r.ready ? r.rate : null, urteil: v ? v.key : null, urteilText: v ? v.text : '',
-      kraftWoche: kraftW.length, letzteKraft: last ? last.d : null, naechste: nextType, trainingFaellig: faellig,
+      kraftWoche: kraftW.length, letzteKraft: last ? last.d : null, naechste: nextType, trainingFaellig: faellig, geplant: wp,
       fussballHeute: fussball, essenOffen: essenOffen, feier: feier, nachFeier: nach,
     };
     s.text = texts(s, o);
@@ -214,7 +218,7 @@ var Coach = (function () {
     return {
       morgen: morgen.join(' '),
       abend: 'Dein Essen für heute ist noch offen. Ein Tipp auf „Alles wie geplant“ reicht, Abweichungen schreibst du dazu.',
-      training: 'Diese Woche ' + s.kraftWoche + ' von 2 Krafteinheiten' + (s.letzteKraft ? ', die letzte am ' + dm(s.letzteKraft) : '.') + ' Heute würde ' + kn + ' passen. Wenig Zeit? Die Kurzfassung dauert etwa 30 Minuten.',
+      training: (s.geplant ? 'Heute ist dein geplanter Trainingstag. ' : '') + 'Diese Woche ' + s.kraftWoche + ' von 2 Krafteinheiten' + (s.letzteKraft ? ', die letzte am ' + dm(s.letzteKraft) : '.') + ' Heute würde ' + kn + ' passen. Wenig Zeit? Die Kurzfassung dauert etwa 30 Minuten.',
     };
   }
 

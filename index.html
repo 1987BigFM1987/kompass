@@ -508,6 +508,34 @@ a.btn{text-decoration:none}
 .flist{list-style:none;margin:0;padding:0;display:grid;gap:8px}
 .flist li{display:grid;grid-template-columns:16px 1fr;gap:10px;font-size:14px;color:var(--ink-2);align-items:start}.flist .ic{color:var(--warn);margin-top:2px}
 .exact+.exact{margin-top:-8px}
+.mcheck{gap:10px}
+.mrow3{display:grid;grid-template-columns:96px 1fr;gap:10px;align-items:center;font-size:14px;font-weight:500}
+.seg3{display:grid;grid-template-columns:repeat(3,1fr);background:var(--surface-2);border-radius:12px;padding:3px;gap:3px}
+.seg3 button{min-height:36px;border-radius:9px;font-size:13px;font-weight:600;color:var(--ink-2)}
+.seg3 button.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.seg3 button.on.v0{color:var(--warn)}.seg3 button.on.v2{color:var(--good)}
+.wstrip{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.wd{display:grid;justify-items:center;gap:4px;padding:8px 0;border-radius:12px;background:var(--surface-2);font-size:12px;font-weight:600;color:var(--ink-3)}
+.wd i{height:16px;display:grid;place-items:center;color:var(--ink-3)}
+.wd.pl{background:var(--accent-soft);color:var(--accent-text)}.wd.pl i{color:var(--accent-text)}
+.wd.done{background:var(--accent);color:var(--accent-ink)}.wd.done i{color:var(--accent-ink)}
+.wd.today{box-shadow:inset 0 0 0 2px var(--ink-3)}
+.tapc{cursor:pointer}
+.wpick{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.wpick button{display:grid;justify-items:center;gap:2px;padding:10px 0;border-radius:14px;background:var(--surface);box-shadow:var(--shadow);min-height:72px}
+.wpick b{font-size:15px}.wpick small{font-size:11px;color:var(--ink-3)}.wpick i{height:16px;color:var(--ink-3)}
+.wpick button.on{background:var(--accent);color:var(--accent-ink)}.wpick button.on small,.wpick button.on i{color:inherit;opacity:.85}
+.wpick button[disabled]{opacity:.35}
+.fgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.fthumb{display:grid;gap:4px;font-size:11px;color:var(--ink-3);text-align:center}
+.fthumb img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:12px;background:var(--surface-2);display:block}
+.cmp{position:relative;aspect-ratio:3/4;max-height:58vh;border-radius:18px;overflow:hidden;background:var(--surface-2);justify-self:center;width:100%}
+.cmp img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.cmp-l{position:absolute;top:0;bottom:0;width:2px;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.3);transform:translateX(-1px)}
+.cmp-t{position:absolute;bottom:10px;background:rgba(0,0,0,.6);color:#fff;font-size:12px;font-weight:600;padding:4px 8px;border-radius:8px}
+.cmp-t.l{left:10px}.cmp-t.r{right:10px}
+.cmp-r{width:100%;accent-color:var(--accent)}
+.fld select{min-height:48px;border-radius:14px;border:1px solid var(--line);background:var(--surface);padding:0 12px;font:inherit;font-size:16px;color:var(--ink)}
 ::view-transition-old(root),::view-transition-new(root){animation-duration:.22s}
 ::view-transition-group(*){animation-duration:.3s;animation-timing-function:cubic-bezier(.2,.8,.2,1)}
 @keyframes up{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}
@@ -676,14 +704,15 @@ function ingest(st){
   const bySes={};for(const x of st.sets)(bySes[x[0]]=bySes[x[0]]||[]).push(x);
   const isAct=s=>/^[FL]/.test(String(s.plan));
   HA={};
-  SESS=st.sessions.filter(s=>!isAct(s)).map(s=>{const ex={};for(const x of (bySes[s.id]||[]).sort((a,b)=>a[3]-b[3])){if(String(x[1]).startsWith('alt:')){const n=String(x[1]).slice(4);const l=HA[n]=HA[n]||[];let e=l.find(q=>q.id===s.id);if(!e)l.push(e={id:s.id,d:s.d,w:x[4],reps:[]});e.reps.push(x[5]);continue}(ex[x[1]]=ex[x[1]]||{w:x[4],reps:[]}).reps.push(x[5])}return{id:s.id,d:s.d,type:s.plan.replace(/[^AB]/g,'')||'A',min:s.min,ex}}).filter(s=>Object.keys(s.ex).length||s.min).sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0);
+  SESS=st.sessions.filter(s=>!isAct(s)).map(s=>{const ex={};for(const x of (bySes[s.id]||[]).sort((a,b)=>a[3]-b[3])){if(String(x[1]).startsWith('alt:')){const n=String(x[1]).slice(4);const l=HA[n]=HA[n]||[];let e=l.find(q=>q.id===s.id);if(!e)l.push(e={id:s.id,d:s.d,w:x[4],reps:[]});e.reps.push(x[5]);continue}(ex[x[1]]=ex[x[1]]||{w:x[4],reps:[]}).reps.push(x[5])}return{id:s.id,d:s.d,type:s.plan.replace(/[^AB]/g,'')||'A',min:s.min,ex,deload:/-E$/.test(String(s.plan))}}).filter(s=>Object.keys(s.ex).length||s.min).sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0);
   ACT=st.sessions.filter(isAct).map(s=>({id:s.id,d:s.d,type:s.plan[0],min:s.min,note:s.note,knie:s.knie||'',km:s.km})).sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0);
   for(const l of Object.values(HA))l.sort((a,b)=>a.d<b.d?-1:1);
   H={};for(const s of SESS)for(const[id,e]of Object.entries(s.ex))(H[id]=H[id]||[]).push({d:s.d,type:s.type,w:e.w,reps:e.reps});
   // Tag
   const local=LS.get('day',null);
-  S.day=local&&local.date===TODAY&&local.dirty?local:Object.assign({date:TODAY,type:'',meals:{},supps:{},water:0,extras:[],fixed:false},st.today===TODAY&&st.day||{},{date:TODAY});
+  S.day=local&&local.date===TODAY&&local.dirty?local:Object.assign({date:TODAY,type:'',meals:{},supps:{},water:0,extras:[],fixed:false,check:{}},st.today===TODAY&&st.day||{},{date:TODAY});
   if(!Array.isArray(S.day.extras))S.day.extras=[];
+  if(!S.day.check||typeof S.day.check!=='object')S.day.check={};
   if(!S.day.fixed||!S.day.type)S.day.type=autoType().t;
 }
 /** Tagesart ohne Zutun: Trainingstag, wenn heute Kraft, Fußball oder Laufen ansteht oder erledigt ist. */
@@ -788,7 +817,7 @@ function chosen(mi,m){const opts=mealOpts(m);const st=S.day.meals[mi]||{};let k=
 function foodTotals(plan){let pl=[0,0,0,0],ea=[0,0,0,0],n=0;plan.meals.forEach((m,mi)=>{const c=chosen(mi,m);const v=[c.o.k,c.o.p,c.o.c,c.o.f];pl=pl.map((x,j)=>x+v[j]);if(c.eaten){ea=ea.map((x,j)=>x+v[j]);n++}});
   const xk=sum(S.day.extras.map(x=>+x.k||0));return{pl,ea,n,xk,tot:ea[0]+xk}}
 function dayTargets(plan){return plan&&plan.targets?(plan.targets[S.day.type]||plan.targets.t||[0,0,0,0]):[0,0,0,0]}
-function saveDay(){S.day.dirty=true;LS.set('day',S.day);syncToday();clearTimeout(saveDay.t);saveDay.t=setTimeout(()=>enqueue('saveDay',[TODAY,JSON.stringify({type:S.day.type,meals:S.day.meals,supps:S.day.supps,water:S.day.water,extras:S.day.extras,fixed:!!S.day.fixed})],'day-'+TODAY),900)}
+function saveDay(){S.day.dirty=true;LS.set('day',S.day);syncToday();clearTimeout(saveDay.t);saveDay.t=setTimeout(()=>enqueue('saveDay',[TODAY,JSON.stringify({type:S.day.type,meals:S.day.meals,supps:S.day.supps,water:S.day.water,extras:S.day.extras,fixed:!!S.day.fixed,check:S.day.check})],'day-'+TODAY),900)}
 /** Hält die Tagesübersicht für Wochenrückblick und Statistik auch ohne Netz aktuell. */
 function syncToday(){const n=Object.values(S.day.meals).filter(m=>m&&m.eaten).length;const row={date:TODAY,type:S.day.type,n,kcalExtra:sum(S.day.extras.map(x=>+x.k||0)),feier:S.day.extras.some(x=>x.f)};DAYS=DAYS.filter(d=>d.date!==TODAY).concat([row])}
 const EXTRAS=[['Snack klein',150],['Snack groß',400],['Süßes',250],['Bier 0,5 l',210],['Wein 0,2 l',150],['Feier oder Restaurant',800,true]];
@@ -852,9 +881,53 @@ function tapTo(tab,label,r){return ` data-act="tab" data-tab="${tab}"${r?` data-
 const goArrow=()=>`<span class="go" aria-hidden="true">${ic('right',18)}</span>`;
 function bauchDue(){const mon=monday(TODAY);const last=UMF.length?UMF[UMF.length-1]:null;return(!last||last[0]<mon)&&dO(TODAY).getUTCDay()>=1&&dO(TODAY).getUTCDay()<=3}
 
+/* ============ Begleiter: Erholung, Wochenplan, Entlastung ============ */
+const CHECKQ=[['schlaf','Schlaf',['schlecht','okay','gut']],['kater','Muskelkater',['stark','etwas','keiner']],['energie','Energie',['wenig','mittel','viel']]];
+/** Erholung aus dem Morgen-Check: 0 bis 6 Punkte, erst wenn alle drei beantwortet sind */
+function readiness(c){c=c||{};if(!CHECKQ.every(([k])=>c[k]!=null))return null;const sc=CHECKQ.reduce((a,[k])=>a+(+c[k]||0),0);return{sc,level:sc<=2?'schwach':sc<=4?'mittel':'gut'}}
+const WP=mon=>{const w=(S.state&&S.state.wochenplan)||{};return Array.isArray(w[mon])?w[mon]:null};
+const wpTarget=()=>dO(TODAY).getUTCDay()===0?addD(monday(TODAY),7):monday(TODAY);
+/** Vorschlag für die Trainingstage: wie letzte Woche, sonst Montag und Donnerstag, nie an Fußballtagen */
+function wpSuggest(mon){const prev=WP(addD(mon,-7));let wd=prev?prev.map(d=>diffD(addD(mon,-7),d)):null;
+  if(!wd){const l=SESS.filter(x=>x.d>=addD(mon,-14)&&x.d<mon).map(x=>(dO(x.d).getUTCDay()+6)%7);wd=l.length>=2?[...new Set(l)].slice(-2):[0,3]}
+  return wd.map(i=>addD(mon,i)).filter(d=>!Coach.eventsOn(EVENTS,d,'fussball').length).slice(0,3)}
+function deloadInfo(){
+  const a=LS.get('deload',null);if(a&&a.start<=TODAY&&TODAY<addD(a.start,7))return{active:true,until:addD(a.start,6)};
+  // Seit wann am Stück trainiert wird: letzte Entlastung oder letzte Pause von mindestens einer Woche
+  let base=SESS[0]?SESS[0].d:TODAY;for(let i=1;i<SESS.length;i++)if(diffD(SESS[i-1].d,SESS[i].d)>=8||SESS[i].deload)base=SESS[i].d;
+  if(SESS.length&&diffD(SESS[SESS.length-1].d,TODAY)>=8)base=TODAY;
+  const weeks=Math.floor(diffD(base,TODAY)/7),recent=SESS.filter(x=>x.d>=addD(TODAY,-42)).length;
+  const plateaus=[...new Set(PLAN.A.ex.concat(PLAN.B.ex))].filter(id=>EX[id]&&(hintFor(id).kind==='plateau'||trendStatus(id).l==='Sinkt')).length;
+  const low=[...Array(7)].map((_,i)=>addD(TODAY,-i)).filter(d=>{const c=d===TODAY?S.day.check:(DAYS.find(x=>x.date===d)||{}).check;const r=readiness(c);return r&&r.level==='schwach'}).length;
+  // Stagnation zählt nur bei regelmäßigem Training: wer selten trainiert, braucht mehr Training, keine Pause
+  const regular=SESS.filter(x=>x.d>=addD(TODAY,-28)).length>=6;
+  const why=weeks>=8&&recent>=8?`${weeks} Wochen am Stück ohne Entlastung`:plateaus>=3&&regular?`${plateaus} Übungen kommen trotz regelmäßigem Training nicht weiter`:low>=3?`${low} Tage mit schwacher Erholung in einer Woche`:null;
+  const skip=LS.get('deload-skip',null),quiet=skip&&TODAY<addD(skip,14);
+  return{active:false,why:quiet?null:why,whyAll:why,weeks,plateaus,low}}
+
+/* ============ Fortschrittsfotos: nur auf diesem Handy (IndexedDB), nie im Sheet ============ */
+let FOTOS=null;
+const FDB={p:null,open(){return this.p||(this.p=new Promise((res,rej)=>{const r=indexedDB.open('kompass-fotos',1);r.onupgradeneeded=()=>r.result.createObjectStore('f',{keyPath:'id'});r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}))},
+  async tx(mode,fn){const db=await this.open();return new Promise((res,rej)=>{const t=db.transaction('f',mode),st=t.objectStore('f'),q=fn(st);t.oncomplete=()=>res(q&&q.result);t.onerror=()=>rej(t.error)})},
+  all(){return this.tx('readonly',st=>st.getAll())},put(x){return this.tx('readwrite',st=>st.put(x))},del(id){return this.tx('readwrite',st=>st.delete(id))}};
+async function loadFotos(){try{const l=(await FDB.all())||[];if(FOTOS)FOTOS.forEach(f=>URL.revokeObjectURL(f.url));FOTOS=l.sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:a.id<b.id?-1:1).map(f=>({id:f.id,d:f.d,url:URL.createObjectURL(f.b)}));
+  LS.set('foto-last',FOTOS.length?FOTOS[FOTOS.length-1].d:null)}catch(e){FOTOS=[]}}
+async function shrinkFoto(file){
+  let src;try{src=await createImageBitmap(file,{imageOrientation:'from-image'})}catch(e){src=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=URL.createObjectURL(file)})}
+  const w=src.width,h=src.height,k=Math.min(1,1280/Math.max(w,h)),c=document.createElement('canvas');c.width=Math.round(w*k);c.height=Math.round(h*k);c.getContext('2d').drawImage(src,0,0,c.width,c.height);
+  return await new Promise(r=>c.toBlob(r,'image/jpeg',0.82))}
+function fotoDue(){const l=LS.get('foto-last',null);return !l||diffD(l,TODAY)>=28}
+function fotoCard(){
+  const f=FOTOS||[],last=f.slice(-3).reverse();
+  return `<div class="sec-t"><h3>Fotos</h3><small>nur auf diesem Handy</small></div><article class="card">
+    ${f.length?`<div class="fgrid">${last.map(x=>`<button class="fthumb" data-act="fotos" data-a="${f[0].id}" data-b="${x.id}" aria-label="Foto vom ${dm(x.d)} ansehen"><img src="${x.url}" alt=""><span>${dm(x.d)}${wAt(x.d)&&wAt(x.d).v!=null?' · '+nf(wAt(x.d).v)+' kg':''}</span></button>`).join('')}</div>`
+      :`<p class="sub" style="margin:0">Einmal im Monat ein Foto, gleiche Stelle, gleiches Licht, morgens. Nach drei Monaten siehst du, was die Waage nicht zeigt.</p>`}
+    <div class="two"><button class="btn btn-p" data-act="foto">${ic('plus',18)}Foto aufnehmen</button>${f.length>=2?`<button class="btn btn-s" data-act="fotos" data-a="${f[0].id}" data-b="${f[f.length-1].id}">Vergleichen</button>`:'<span></span>'}</div>
+    <p class="sub" style="margin:0;font-size:13px">Die Fotos bleiben in der App auf diesem Handy und gehen nicht ins Sheet. Löschst du die App, sind sie weg.</p></article>`}
+
 /* ============ Coach: Fragen, die man im Studio oder in der Küche hat ============ */
 const COACHQ={
- training:['Trainer',[['besetzt','Gerät ist besetzt'],['voll','Studio ist sehr voll'],['technik','Wie geht die Übung?'],['schwer','Gewicht ist zu schwer'],['leicht','Gewicht ist zu leicht'],['zwickt','Es zwickt oder schmerzt'],['zeit','Ich habe wenig Zeit'],['pause','Wie lange Pause?']]],
+ training:['Trainer',[['besetzt','Gerät ist besetzt'],['voll','Studio ist sehr voll'],['technik','Wie geht die Übung?'],['schwer','Gewicht ist zu schwer'],['leicht','Gewicht ist zu leicht'],['zwickt','Es zwickt oder schmerzt'],['zeit','Ich habe wenig Zeit'],['pause','Wie lange Pause?'],['deload','Brauche ich eine Pause?'],['woche','Woche planen']]],
  essen:['Ernährung',[['fehlt','Was fehlt heute noch?'],['auswaerts','Ich esse auswärts'],['ausfall','Eine Mahlzeit fällt aus'],['hunger','Ich habe Heißhunger'],['feier','Heute ist eine Feier'],['anders','Ich habe anders gegessen']]],
  ziel:['Ziel',[['kurs','Bin ich auf Kurs?'],['hoch','Warum zeigt die Waage mehr?'],['plateau','Es geht nicht weiter runter']]]};
 const cBtn=(label,attrs,primary)=>`<button class="btn ${primary?'btn-p':'btn-s'} wide" data-act="cdo" ${attrs}>${label}</button>`;
@@ -879,6 +952,11 @@ function coachAnswer(q){
   case 'zeit':return{t:'Ich habe wenig Zeit',p:['Die Kurzfassung nimmt je eine Übung für Brust, Rücken, Beine und Schultern mit zwei Sätzen. Das sind etwa 30 Minuten und hält deinen Stand, gerade in der Diät.'],
     a:inS?[]:[cBtn(ic('bolt',18)+'Kurzfassung starten',`data-do="start" data-t="${nt}" data-short="1"`,true)]};
   case 'pause':return{t:'Wie lange Pause?',p:['Große Übungen wie Drücken, Rudern, Latzug und Beine brauchen zwei bis zweieinhalb Minuten. Kleine wie Arme, Seitheben und Bauch 60 bis 90 Sekunden.',ex?`Für ${E.alt||ex.n} stellt die App ${fmtT(ex.rest)} Minuten ein. Mit „+15 s“ verlängerst du, mit „Weiter“ geht es früher los.`:'Die App stellt die Pause je Übung ein. Mit „+15 s“ verlängerst du.'],a:[]};
+  case 'deload':{const di=deloadInfo();
+    if(di.active)return{t:'Entlastungswoche läuft',p:[`Bis ${fmtD(di.until)} hat jede Übung die halbe Satzzahl, gleiche Gewichte und drei Wiederholungen im Tank.`,'Danach geht es mit deinen normalen Gewichten weiter, meist stärker als vorher.'],a:[cBtn('Entlastung beenden','data-do="deloadEnd"')]};
+    if(di.whyAll)return{t:'Zeit für eine Entlastungswoche',p:[`Grund: ${esc(di.whyAll)}.`,'Eine Woche mit halben Sätzen und gleichen Gewichten lässt Sehnen, Gelenke und Nerven aufholen. Die Muskeln gehen dabei nicht verloren, danach geht es meist stärker weiter.'],a:[cBtn('Entlastungswoche starten','data-do="deloadStart"',true),cBtn('In zwei Wochen nochmal fragen','data-do="deloadSkip"')]};
+    return{t:'Brauche ich eine Pause?',p:['Gerade nicht. Kompass schlägt eine Entlastungswoche vor, wenn du acht Wochen am Stück trainierst, mehrere Übungen nicht weiterkommen oder die Erholung an mehreren Tagen schwach ist.',`Im Moment: ${di.weeks} Wochen seit der letzten Entlastung, ${di.plateaus} Übungen stehen, ${di.low} Tage mit schwacher Erholung.`],a:[cBtn('Trotzdem eine Woche entlasten','data-do="deloadStart"')]}}
+  case 'woche':{const m=wpTarget(),wp=WP(m);return{t:'Woche planen',p:[wp?`Geplant: ${wp.map(d=>WDL[dO(d).getUTCDay()]).join(' und ')}. An diesen Tagen erinnert dich Kompass.`:'Leg fest, an welchen Tagen du trainierst. Kompass erinnert dich dann genau an diesen Tagen und nicht irgendwann.'],a:[cBtn(wp?'Plan ändern':'Tage wählen',`data-do="wplan" data-m="${m}"`,true)]}}
   case 'fehlt':{if(!plan)return{t:'Was fehlt heute noch?',p:['Für diese Phase ist kein Essensplan hinterlegt.'],a:[]};
     const open=plan.meals.map((m,mi)=>({m,c:chosen(mi,m)})).filter(x=>!x.c.eaten),restK=tg[0]-ft.tot,restP=tg[1]-ft.ea[1];
     return{t:'Was fehlt heute noch?',p:[restK>50?`Noch <b>${nf(restK,0)} kcal</b> und <b>${nf(Math.max(0,restP),0)} g Eiweiß</b> bis zum Ziel.`:restK<-50?`Du bist ${nf(-restK,0)} kcal über dem Ziel. Kein Problem, morgen normal weiter.`:'Du bist genau im Ziel.',
@@ -897,14 +975,14 @@ function coachAnswer(q){
 }
 
 /* ============ Startseite: Cockpit ============ */
-const hourNow=()=>{try{return +new Intl.DateTimeFormat('de-DE',{hour:'numeric',hourCycle:'h23',timeZone:'Europe/Berlin'}).format(new Date())}catch(e){return new Date().getHours()}};
+const hourNow=()=>{try{const p=new Intl.DateTimeFormat('en-GB',{hour:'2-digit',hourCycle:'h23',timeZone:'Europe/Berlin'}).formatToParts(new Date()).find(x=>x.type==='hour');const h=p?parseInt(p.value,10):NaN;return isNaN(h)?new Date().getHours():h%24}catch(e){return new Date().getHours()}};
 const kraftWoche=()=>SESS.filter(x=>x.d>=monday(TODAY)&&x.d<=TODAY).length;
 /** Lage des Tages: was erledigt ist und was noch offen ist */
 function lage(){
   const w=wAt(TODAY),weighed=!!(w&&w.v!=null),done=SESS.filter(x=>x.d===TODAY).pop(),kw=kraftWoche();
   const fplan=curPlan(),ft=fplan?foodTotals(fplan):null,meals=fplan?fplan.meals.length:0;
-  const trainDue=!done&&kw<2&&dO(TODAY).getUTCDay()!==0;
-  return{w,weighed,done,kw,trainDue,fplan,ft,meals,foodDone:!!(fplan&&ft.n>=meals),t:trackNow()};
+  const wp=WP(monday(TODAY)),trainDue=!done&&kw<2&&(wp&&wp.length?wp.includes(TODAY):dO(TODAY).getUTCDay()!==0);
+  return{w,weighed,done,kw,trainDue,wp,ready:readiness(S.day.check),deload:deloadInfo(),fplan,ft,meals,foodDone:!!(fplan&&ft.n>=meals),t:trackNow()};
 }
 /** Welches Instrument groß steht: folgt der Tageszeit, Erledigtes rückt nach hinten */
 function focusNow(L){
@@ -918,9 +996,10 @@ function coachSay(L){
   const t=L.t,parts=[];
   const nx=Coach.nextFeier(EVENTS,TODAY);
   if(t&&t.delta!=null)parts.push(Math.abs(t.delta)<0.25?'Du bist genau im Plan.':t.delta<0?`Du liegst ${nf(-t.delta)} kg vor dem Plan.`:`Du liegst ${nf(t.delta)} kg hinter dem Plan, kein Grund zur Eile.`);
-  const todo=[];if(!L.weighed&&hourNow()<12)todo.push('auf die Waage');if(L.trainDue)todo.push('Training');if(L.fplan&&!L.foodDone&&hourNow()>=17)todo.push('Essen eintragen');
+  const todo=[];if(!L.weighed&&hourNow()<12)todo.push('auf die Waage');if(L.trainDue)todo.push(L.ready&&L.ready.level==='schwach'?'ein leichtes Training':L.deload.active?'Training in Entlastung':'Training');if(L.fplan&&!L.foodDone&&hourNow()>=17)todo.push('Essen eintragen');
   if(nx&&nx.in===0)parts.push(`Heute ist ${nx.t}, tagsüber leicht und eiweißreich.`);
   else if(todo.length)parts.push('Heute noch: '+todo.join(', ').replace(/, ([^,]*)$/,' und $1')+'.');
+  else if(L.fplan&&!L.foodDone)parts.push(L.done?`Training erledigt, stark. Essen bisher ${L.ft.n} von ${L.meals} Mahlzeiten.`:`Essen bisher ${L.ft.n} von ${L.meals} Mahlzeiten.`);
   else parts.push(L.done?'Training erledigt, stark.':'Für heute ist alles erledigt.');
   return parts.join(' ');
 }
@@ -954,8 +1033,12 @@ function heroTraining(L){
     <p class="say">Diese Woche ${L.kw} von 2. Nächstes Mal ${PLAN[L.done.type==='A'?'B':'A'].n}.</p></article>`;
   return `<article class="hero tap"${tapTo('training','Training öffnen')}${vt('training')}><div class="hero-l" style="color:var(--drive-text)"><span>${L.trainDue?'Heute dran':'Als Nächstes'}</span><span class="hero-r">${lt?'letzte '+nt+' am '+dm(lt.d):''}${ic('right',16)}</span></div>
     <div class="hero-t">${plan.n}</div>
-    <p class="say"><b>${plan.ex.length} Übungen · ${sets} Sätze · ${Math.round(sets*2.5/5)*5} min.</b>${focus?' '+esc(focus.x):''}</p>
-    <div class="hero-btns"><button class="btn btn-drive" data-act="start" data-t="${nt}">${ic('play',18)}${S.session?'Einheit fortsetzen':'Training starten'}</button>${S.session?'':`<button class="btn btn-s" data-act="start" data-t="${nt}" data-short="1">${ic('bolt',18)}30 min</button>`}</div></article>`}
+    ${L.deload.active?`<p class="say"><b>Entlastungswoche bis ${dm(L.deload.until)}:</b> halbe Sätze, gleiche Gewichte, drei Wiederholungen im Tank.</p>`
+      :L.ready&&L.ready.level==='schwach'?`<p class="say"><b>Erholung heute schwach.</b> Trainier leichter: ein Satz weniger je Übung und zehn Prozent weniger Gewicht. Oder verschieb auf morgen.</p>`
+      :`<p class="say"><b>${plan.ex.length} Übungen · ${sets} Sätze · ${Math.round(sets*2.5/5)*5} min.</b>${focus?' '+esc(focus.x):''}</p>`}
+    <div class="hero-btns">${S.session?`<button class="btn btn-drive" data-act="start" data-t="${nt}">${ic('play',18)}Einheit fortsetzen</button>`
+      :L.ready&&L.ready.level==='schwach'&&!L.deload.active?`<button class="btn btn-drive" data-act="start" data-t="${nt}" data-mode="light">${ic('play',18)}Leichter trainieren</button><button class="btn btn-s" data-act="start" data-t="${nt}">Normal</button>`
+      :`<button class="btn btn-drive" data-act="start" data-t="${nt}">${ic('play',18)}${L.deload.active?'Entlastung starten':'Training starten'}</button><button class="btn btn-s" data-act="start" data-t="${nt}" data-short="1">${ic('bolt',18)}30 min</button>`}</div></article>`}
 function heroEssen(L){
   if(!L.fplan)return heroZiel(L);
   const tg=dayTargets(L.fplan),ft=L.ft,nextSupp=suppGroups().find(g=>g.items.some(x=>!S.day.supps[x.id]));
@@ -989,8 +1072,14 @@ function hinweise(L){
   if(bauchDue())add('neutral','tape','<b>Bauchumfang messen.</b> Einmal pro Woche, morgens auf Nabelhöhe.',` data-act="umfang" role="button" tabindex="0" aria-label="Bauchumfang eintragen"`,4);
   const dow=dO(TODAY).getUTCDay();if(dow>=1&&dow<=2){const w=weekData(addD(monday(TODAY),-7));add('neutral','chart',`<b>Wochenrückblick KW ${isoWeek(w.von)}.</b> ${esc(w.tipp)}`,tapTo('woche','Woche öffnen'),3)}
   const next=nextPhase(TODAY);if(next&&diffD(TODAY,next.s)<=14)add('neutral','cal',`<b>${esc(next.n)} ab ${dm(next.s)}.</b> Danach gilt dein Plan aus „${esc(next.tab)}“.`,tapTo('essen','Essen öffnen'),5);
+  const wm=wpTarget();if(!WP(wm)&&(dO(TODAY).getUTCDay()===0||dO(TODAY).getUTCDay()<=2))add('accent','cal',`<b>${wm>monday(TODAY)?'Plan die neue Woche.':'Plan diese Woche.'}</b> Wähl deine Trainingstage, dann erinnert dich Kompass genau dann.`,` data-act="wplan" data-m="${wm}" role="button" tabindex="0" aria-label="Woche planen"`,dO(TODAY).getUTCDay()===0?1:2);
+  if(L.deload.why)add('accent','bolt',`<b>Zeit für eine Entlastungswoche.</b> ${esc(L.deload.why)}.`,` data-act="coach" data-c="training" data-q="deload" role="button" tabindex="0" aria-label="Entlastungswoche ansehen"`,2);
+  if(fotoDue()&&hourNow()<12)add('neutral','plus','<b>Zeit für dein Monatsfoto.</b> Gleiche Stelle, gleiches Licht, dauert eine Minute.',` data-act="foto" role="button" tabindex="0" aria-label="Foto aufnehmen"`,4);
   return out.sort((a,b)=>a.prio-b.prio).slice(0,2);
 }
+function morgenCheck(){const c=S.day.check;
+  return `<article class="card mcheck"><div class="card-h"><span class="eyebrow">Wie fit bist du heute?</span><span class="sub" style="font-size:12px">3 Tipps</span></div>
+    ${CHECKQ.map(([k,l,o])=>`<div class="mrow3"><span>${l}</span><div class="seg3" role="group" aria-label="${l}">${o.map((t,i)=>`<button class="${c[k]===i?'on v'+i:''}" data-act="chk" data-k="${k}" data-v="${i}" aria-pressed="${c[k]===i}">${t}</button>`).join('')}</div></div>`).join('')}</article>`}
 function vHeute(){
   const ph=phaseAt(TODAY),L=lage(),f=focusNow(L);
   const wk=ph?Math.floor(diffD(ph.s,TODAY)/7)+1:0,wkTot=ph&&ph.e?Math.round((diffD(ph.s,ph.e)+1)/7):null;
@@ -1007,8 +1096,9 @@ function vHeute(){
   <div class="stack gut cock">
     <section class="agent" aria-label="Lage heute">
       <p class="agent-say">${esc(coachSay(L))}</p>
-      <div class="lamps">${lamps.map(([k,i,l,st,attr])=>`<span class="lamp ${st}"${attr}>${ic(st==='ok'?'check':i,16,st==='ok'?2.8:2)}${l}</span>`).join('')}</div>
+      <div class="lamps">${lamps.map(([k,i,l,st,attr])=>`<span class="lamp ${st}"${attr}>${ic(st==='ok'?'check':i,16,st==='ok'?2.8:2)}${l}</span>`).join('')}${L.ready?`<span class="lamp ${L.ready.level==='gut'?'ok':L.ready.level==='schwach'?'open':''}" data-act="checkedit" role="button" tabindex="0" aria-label="Erholung ändern">${ic('bolt',16)}Erholung ${L.ready.level}</span>`:''}</div>
     </section>
+    ${!L.ready&&(hourNow()<14||Object.keys(S.day.check).length||S.checkEdit)||S.checkEdit?morgenCheck():''}
     ${hero}
     <nav class="focusnav" aria-label="Hauptinstrument wählen">${[['ziel','Ziel'],['training','Training'],['essen','Essen']].map(([k,l])=>`<button class="${f===k?'on':''}" data-act="focus" data-f="${k}" aria-pressed="${f===k}">${l}</button>`).join('')}</nav>
     <div class="tiles">${tiles.join('')}</div>
@@ -1074,6 +1164,7 @@ function vGewicht(){
     ${corr}
     ${body}
     ${bauch}
+    ${fotoCard()}
     <div class="sec-t"><h3>Wochen</h3><small>Ø der gewogenen Tage</small></div>
     <article class="card" style="gap:0;padding-block:8px">
       ${weeks.map((x,i)=>{const prev=weeks[i+1];const d=prev&&prev.a!=null&&x.a!=null?x.a-prev.a:null;const fe=Array.from({length:7},(_,j)=>feierOn(addD(x.m,j)));
@@ -1090,6 +1181,11 @@ function vGewicht(){
   </div>`;
 }
 
+function weekStrip(){const mon=monday(TODAY),wp=WP(mon)||[];
+  return `<article class="card"><div class="card-h"><span class="eyebrow">Diese Woche</span><button class="link" data-act="wplan" data-m="${mon}">${wp.length?'Ändern':'Tage planen'}</button></div>
+    <div class="wstrip">${[...Array(7)].map((_,i)=>{const d=addD(mon,i),done=SESS.some(x=>x.d===d),pl=wp.includes(d),fb=Coach.eventsOn(EVENTS,d,'fussball').length||ACT.some(a=>a.d===d&&a.type==='F');
+      return `<div class="wd${done?' done':''}${pl?' pl':''}${d===TODAY?' today':''}"><span>${WDS[dO(d).getUTCDay()]}</span><i>${done?ic('check',14,3):pl?ic('dumbbell',14):fb?ic('ball',14):''}</i></div>`}).join('')}</div>
+    ${wp.length?`<p class="sub" style="margin:0">Geplant: ${wp.map(d=>WDL[dO(d).getUTCDay()]).join(' und ')}. An diesen Tagen erinnert dich Kompass.</p>`:`<p class="sub" style="margin:0">Leg deine Trainingstage fest, dann erinnert dich Kompass genau dann.</p>`}</article>`}
 function vTraining(){
   const nt=nextType(),plan=PLAN[nt],ot=nt==='A'?'B':'A';
   const knees=Object.entries(EX).filter(([,e])=>e.knee);
@@ -1109,6 +1205,9 @@ function vTraining(){
       ${S.session?'':`<button class="btn btn-slab2" data-act="start" data-t="${nt}" data-short="1">${ic('bolt',18)}Wenig Zeit · 30 min</button>`}</div>
     </article>
     ${S.session?'':`<button class="btn btn-s wide" data-act="start" data-t="${ot}">Stattdessen ${PLAN[ot].n} starten</button>`}
+    ${weekStrip()}
+    ${(()=>{const di=deloadInfo();return di.active?`<div class="coach c-accent"><b>Entlastungswoche bis ${fmtD(di.until)}</b><span>Jede Einheit startet mit halben Sätzen und gleichen Gewichten. <button class="link" data-act="deloadEnd">Beenden</button></span></div>`
+      :di.why?`<div class="coach c-accent tapc" data-act="coach" data-c="training" data-q="deload" role="button" tabindex="0"><b>Zeit für eine Entlastungswoche</b><span>${esc(di.why)}. Tipp für Details.</span></div>`:''})()}
     <article class="card coachcard"><div class="card-h"><span class="eyebrow">${ic('ask',16)} Dein Trainer</span><button class="link" data-act="coach" data-c="training">Alle Fragen</button></div>
       <div class="chips">${[['besetzt','Gerät besetzt'],['voll','Studio voll'],['technik','Wie geht die Übung?'],['zwickt','Es zwickt']].map(([q,l])=>`<button data-act="coach" data-c="training" data-q="${q}">${l}</button>`).join('')}</div>
       <p class="sub" style="margin:0">Tipp eine Übung im Plan an, dann siehst du die Ausführung, typische Fehler und ein Video.</p></article>
@@ -1215,10 +1314,13 @@ function vEssen(){
 /* ============ Session ============ */
 /** Kurzfassung: je eine Übung für Brust, Rücken, Beine und Schultern, je 2 Sätze. Etwa 30 Minuten. */
 function shortList(t){const out=[];for(const m of ['Brust','Rücken','Beine','Schultern']){const id=PLAN[t].ex.find(i=>EX[i].m===m&&!out.includes(i));if(id)out.push(id)}return out.length>=3?out:PLAN[t].ex.slice(0,4)}
-function startSession(t,short){
+function startSession(t,short,mode){
   const plan=PLAN[t];const list=short?shortList(t):plan.ex;
-  S.session={id:'s-'+TODAY+'-'+t+'-'+Date.now().toString(36).slice(-5),type:t,short:!!short,start:Date.now(),cur:0,rest:null,ex:list.map(id=>{const ex=EX[id],h=H[id]||[],L=h[h.length-1],hn=hintFor(id);const w=hn.w!=null?hn.w:(L?L.w:0);
-    return{id,alt:null,aid:null,note:'',showNote:false,act:null,sets:Array.from({length:short?Math.min(2,ex.s):ex.s},(_,i)=>{const g=L?(L.reps[i]!=null?L.reps[i]:L.reps[L.reps.length-1]):null;return{w,r:hn.up?ex.r[0]:(g!=null?g:ex.r[0]),g,rir:null,done:false}})}})};
+  // mode: 'light' = ein Satz weniger, 10 % leichter; 'deload' = halbe Sätze, gleiche Gewichte, keine Steigerung
+  S.session={id:'s-'+TODAY+'-'+t+'-'+Date.now().toString(36).slice(-5),type:t,short:!!short,mode:mode||'',start:Date.now(),cur:0,rest:null,ex:list.map(id=>{const ex=EX[id],h=H[id]||[],L=h[h.length-1],hn=hintFor(id);
+    let w=hn.w!=null?hn.w:(L?L.w:0);if(mode==='deload'&&L)w=L.w;if(mode==='light'){const st=Math.max(0.5,ex.inc||0.5);w=Math.floor(w*0.9/st)*st}
+    const n=short?Math.min(2,ex.s):mode==='deload'?Math.max(1,Math.ceil(ex.s/2)):mode==='light'?Math.max(1,ex.s-1):ex.s;
+    return{id,alt:null,aid:null,note:'',showNote:false,act:null,sets:Array.from({length:n},(_,i)=>{const g=L?(L.reps[i]!=null?L.reps[i]:L.reps[L.reps.length-1]):null;return{w,r:hn.up&&!mode?ex.r[0]:(g!=null?g:ex.r[0]),g,rir:null,done:false}})}})};
   if(S.day.type!=='t'&&!S.day.fixed){S.day.type='t';saveDay()}
   persistSession();
 }
@@ -1240,7 +1342,7 @@ function vSession(){
   return `
   <header class="sess-top gut">
     <button class="iconbtn" data-act="finish" aria-label="Einheit beenden">${ic('x',22)}</button>
-    <div class="sess-title"><span class="eyebrow">${plan.n}${se.short?' · Kurzfassung':''}</span><span class="elapsed" id="elapsed">0:00</span></div>
+    <div class="sess-title"><span class="eyebrow">${plan.n}${se.short?' · Kurzfassung':''}${se.mode==='deload'?' · Entlastung':se.mode==='light'?' · Leicht':''}</span><span class="elapsed" id="elapsed">0:00</span></div>
     <button class="btn btn-s sm" data-act="finish">Beenden</button>
   </header>
   <nav class="exstrip gut" aria-label="Übungen">${se.ex.map((x,i)=>{const d=x.sets.every(s=>s.done);return `<button class="expill ${i===se.cur?'cur':''} ${d?'done':''}" data-act="goex" data-i="${i}" aria-current="${i===se.cur}"><span class="k">${d?ic('check',14,3):i+1}</span><span>${esc(x.alt||EX[x.id].n)}</span></button>`}).join('')}</nav>
@@ -1248,7 +1350,8 @@ function vSession(){
     <section class="exhead"><div class="eyebrow">Übung ${se.cur+1} von ${se.ex.length} · ${ex.m}</div>
       <h2 class="exname">${esc(name)}${ex.d&&!E.alt?`<small>${ex.d}</small>`:''}</h2>
       <div class="exmeta"><span class="tag"><b>${E.sets.length} × ${ex.r[0]} bis ${ex.r[1]}</b> ${unitL(ex)}</span><span class="tag">${ic('timer',16)}${fmtT(ex.rest)} Pause</span>${ex.set&&!E.alt?`<span class="tag set">${ex.set}</span>`:''}<a class="tag vid" href="https://www.youtube.com/results?search_query=${encodeURIComponent(name+' richtige Ausführung')}" target="_blank" rel="noopener">${ic('play',16)}Video</a></div></section>
-    <div class="coach c-${hn.tone}"><b>${esc(hn.title)}</b><span>${esc(hn.text)}</span></div>
+    ${se.mode?`<div class="coach c-accent"><b>${se.mode==='deload'?'Entlastung':'Leichter Tag'}</b><span>${se.mode==='deload'?'Gleiches Gewicht wie letztes Mal, halbe Satzzahl, drei Wiederholungen im Tank. Nicht steigern.':'Ein Satz weniger und zehn Prozent leichter. Saubere Wiederholungen, kein Versagen.'}</span></div>`
+      :`<div class="coach c-${hn.tone}"><b>${esc(hn.title)}</b><span>${esc(hn.text)}</span></div>`}
     ${last?`<div class="lastline"><span>Letztes Mal, ${wd(last.d)} ${dm(last.d)}</span><span><b>${kg(last.w)} kg</b> × ${last.reps.join(' · ')}${ex.u==='s'?' s':''}</span></div>`:''}
     <div class="sets">${E.sets.map((s,i)=>setRow(ex,s,i,i===ai)).join('')}</div>
     <div class="exact"><button class="btn btn-s" data-act="swap">${ic('swap',18)}Gerät besetzt?</button><button class="btn btn-s" data-act="tech" data-n="${esc(name)}" data-m="${ex.m}">${ic('book',18)}Wie geht das?</button></div>
@@ -1332,6 +1435,26 @@ function vSheet(){
     ${last?'':`<button class="btn btn-s wide" data-act="later">Ans Ende schieben und später machen</button>`}
     <p class="sub" style="margin:0">Oder tausch auf eine Alternative mit den gleichen Muskeln. Sie bekommt ihren eigenen Verlauf, damit deine Zahlen vergleichbar bleiben.</p>
     <div class="alt-list">${(ALTS[E.id]||[]).map(a=>{const x=EX[EXN[a.toLowerCase()]];return `<button data-act="doswap" data-n="${esc(a)}"><span>${esc(a)}${x&&x.knee?'<small class="knee">fürs Knie</small>':''}</span>${ic('right',18)}</button>`}).join('')}${E.alt?`<button data-act="doswap" data-n=""><span>Zurück zu ${EX[E.id].n}</span>${ic('right',18)}</button>`:''}</div>`;
+  }
+  if(sh.type==='wplan'){
+    const mon=sh.m;label='Woche planen';
+    body=`<div class="sheet-h"><div><div class="eyebrow">KW ${isoWeek(mon)} · ${dm(mon)} bis ${dm(addD(mon,6))}</div><h3>Trainingstage</h3></div><button class="iconbtn" data-act="close" aria-label="Schließen">${ic('x',22)}</button></div>
+    <p class="sub" style="margin:0">Zwei Tage mit mindestens einem Tag Pause dazwischen sind ideal. An Fußballtagen lieber kein Krafttraining.</p>
+    <div class="wpick">${[...Array(7)].map((_,i)=>{const d=addD(mon,i),on=sh.days.includes(d),fb=Coach.eventsOn(EVENTS,d,'fussball').length,fe=Coach.eventsOn(EVENTS,d,'feier').length,past=d<TODAY;
+      return `<button class="${on?'on':''}" data-act="wpday" data-d="${d}" aria-pressed="${on}" ${past?'disabled':''}><b>${WDS[dO(d).getUTCDay()]}</b><small>${dm(d)}</small><i>${fb?ic('ball',14):fe?ic('glass',14):''}</i></button>`}).join('')}</div>
+    <div class="sub">${sh.days.length?`${sh.days.length} ${sh.days.length===1?'Tag':'Tage'}: ${sh.days.slice().sort().map(d=>WDL[dO(d).getUTCDay()]).join(', ')}`:'Noch kein Tag gewählt.'}${sh.days.length>=2&&sh.days.slice().sort().some((d,i,a)=>i&&diffD(a[i-1],d)<2)?' · Zwei Tage direkt hintereinander gehen, mit Pause dazwischen erholst du dich besser.':''}</div>
+    <button class="btn btn-p wide" data-act="wpsave" ${sh.days.length?'':'disabled'}>Plan speichern</button>`;
+  }
+  if(sh.type==='fotos'){
+    const f=FOTOS||[],a=f.find(x=>x.id===sh.a)||f[0],b=f.find(x=>x.id===sh.b)||f[f.length-1];label='Fotos vergleichen';
+    const opt=sel=>f.map(x=>`<option value="${x.id}" ${x.id===sel.id?'selected':''}>${dm(x.d)}${String(x.d).slice(0,4)!==TODAY.slice(0,4)?String(x.d).slice(0,4):''}</option>`).join('');
+    const kgA=wAt(a.d),kgB=wAt(b.d);
+    body=`<div class="sheet-h"><div><div class="eyebrow">Nur auf diesem Handy</div><h3>Vorher und nachher</h3></div><button class="iconbtn" data-act="close" aria-label="Schließen">${ic('x',22)}</button></div>
+    <div class="cmp" id="cmp"><img src="${b.url}" alt="Foto vom ${dm(b.d)}"><img class="cmp-a" src="${a.url}" alt="Foto vom ${dm(a.d)}" style="clip-path:inset(0 ${100-sh.x}% 0 0)"><i class="cmp-l" style="left:${sh.x}%"></i>
+      <span class="cmp-t l">${dm(a.d)}${kgA&&kgA.v!=null?' · '+nf(kgA.v)+' kg':''}</span><span class="cmp-t r">${dm(b.d)}${kgB&&kgB.v!=null?' · '+nf(kgB.v)+' kg':''}</span></div>
+    <input type="range" id="cmp-x" min="0" max="100" value="${sh.x}" aria-label="Trennlinie verschieben" class="cmp-r">
+    <div class="two"><label class="fld"><span>Vorher</span><select id="f-a" data-sel="a">${opt(a)}</select></label><label class="fld"><span>Nachher</span><select id="f-b" data-sel="b">${opt(b)}</select></label></div>
+    <button class="btn btn-q wide" data-act="fdel" data-id="${b.id}">${sh.confirm===b.id?'Wirklich löschen? Nochmal tippen':'Foto vom '+dm(b.d)+' löschen'}</button>`;
   }
   if(sh.type==='tech'){
     const id=EXN[String(sh.n).toLowerCase()],e=id?EX[id]:null,T=techOf(sh.n,sh.m),inS=!!(S.session&&S.inSession);label=sh.n+': Ausführung';
@@ -1525,11 +1648,27 @@ const A={
  cback:()=>{S.sheet.q=null;render()},
  cdo:d=>{const f=A[d.do];if(!f)return;S.sheet=null;f(d);if(d.do==='xadd')toast(EXTRAS[+d.i][0]+' eingetragen')},
  tech:d=>{S.sheet={type:'tech',n:d.n,m:d.m};render()},
+ chk:d=>{const c=S.day.check,v=+d.v;if(c[d.k]===v)delete c[d.k];else c[d.k]=v;if(readiness(c))S.checkEdit=false;saveDay();render()},
+ checkedit:()=>{S.checkEdit=!S.checkEdit;render()},
+ wplan:d=>{const m=d.m||wpTarget();S.sheet={type:'wplan',m,days:(WP(m)||wpSuggest(m)).filter(x=>x>=TODAY||WP(m))};render()},
+ wpday:d=>{const a=S.sheet.days,i=a.indexOf(d.d);if(i>=0)a.splice(i,1);else if(a.length<4)a.push(d.d);render()},
+ wpsave:()=>{const sh=S.sheet,days=sh.days.slice().sort();if(!days.length)return;const st=S.state;st.wochenplan=Object.assign({},st.wochenplan||{},{[sh.m]:days});LS.set('state',st);
+   enqueue('saveWeekPlan',[JSON.stringify({mon:sh.m,days})],'wp-'+sh.m);S.sheet=null;render();toast('Geplant: '+days.map(x=>WDS[dO(x).getUTCDay()]).join(' und '))},
+ deloadStart:()=>{LS.set('deload',{start:TODAY});LS.set('deload-skip',null);S.sheet=null;render();toast('Entlastungswoche bis '+dm(addD(TODAY,6)))},
+ deloadEnd:()=>{LS.set('deload',null);S.sheet=null;render();toast('Entlastung beendet')},
+ deloadSkip:()=>{LS.set('deload-skip',TODAY);S.sheet=null;render();toast('Ich frage in zwei Wochen wieder')},
+ foto:()=>{const i=document.createElement('input');i.type='file';i.accept='image/*';
+   i.onchange=async()=>{const file=i.files&&i.files[0];if(!file)return;toast('Foto wird gespeichert …');
+     try{const b=await shrinkFoto(file);await FDB.put({id:'f'+Date.now().toString(36),d:TODAY,b});try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
+       await loadFotos();render();toast('Foto gespeichert, nur auf diesem Handy')}catch(e){toast('Foto konnte nicht gespeichert werden: '+(e.message||e),true)}};
+   i.click()},
+ fotos:d=>{if(!FOTOS||!FOTOS.length)return;S.sheet={type:'fotos',a:d.a||FOTOS[0].id,b:d.b||FOTOS[FOTOS.length-1].id,x:50};render()},
+ fdel:async d=>{if(S.sheet.confirm!==d.id){S.sheet.confirm=d.id;render();return}await FDB.del(d.id);await loadFotos();S.sheet=FOTOS.length?{type:'fotos',a:FOTOS[0].id,b:FOTOS[FOTOS.length-1].id,x:50}:null;render();toast('Foto gelöscht')},
  later:()=>{const se=S.session;if(!se||se.cur>=se.ex.length-1)return;const E=se.ex.splice(se.cur,1)[0];se.ex.push(E);se.rest=null;S.sheet=null;persistSession();lastKey='';render();toast((E.alt||EX[E.id].n)+' kommt am Ende dran')},
  settings:()=>{S.sheet={type:'settings'};render()},
  reload:()=>{S.sheet=null;reload(false)},
  eufy:async()=>{toast('Frage die Waage ab …');try{const r=await api('eufyAbrufen');await reload(true);toast(String(r))}catch(e){toast('Abruf fehlgeschlagen: '+(e.message||e),true)}},
- start:d=>{primeAudio();if(!S.session)startSession(d.t,!!d.short);S.inSession=true;render()},
+ start:d=>{primeAudio();if(!S.session)startSession(d.t,!!d.short,d.mode||(deloadInfo().active?'deload':''));S.inSession=true;render()},
  range:d=>{S.range=d.r;LS.set('range',S.range);render()},
  day:d=>{S.day.type=d.d;S.day.fixed=true;saveDay();render()},
  dayauto:()=>{S.day.fixed=false;S.day.type=autoType().t;saveDay();render()},
@@ -1591,8 +1730,8 @@ const A={
  discard:()=>{if(!S.sheet.confirm){S.sheet.confirm=true;render();return}S.session=null;S.inSession=false;S.sheet=null;S.tab='heute';lastKey='';persistSession();toast('Einheit verworfen')},
  save:()=>{const se=S.session,sm=summary();
    const sets=[];for(const E of se.ex){const exId=E.alt?'alt:'+E.alt:E.id;E.sets.filter(s=>s.done).forEach((s,k)=>sets.push({id:se.id+'-'+exId+'-'+k,ex:exId,name:E.alt||EX[E.id].n,i:k,kg:s.w,r:s.r,rir:s.rir,note:k===0?E.note:''}))}
-   const payload={id:se.id,d:TODAY,plan:se.type,min:sm.min,note:'',sets};
-   const st=S.state;st.sessions=st.sessions.filter(s=>s.id!==se.id);st.sessions.push({id:se.id,d:TODAY,plan:se.type,min:sm.min,note:''});
+   const payload={id:se.id,d:TODAY,plan:se.type+(se.mode==='deload'?'-E':''),min:sm.min,note:'',sets};
+   const st=S.state;st.sessions=st.sessions.filter(s=>s.id!==se.id);st.sessions.push({id:se.id,d:TODAY,plan:se.type+(se.mode==='deload'?'-E':''),min:sm.min,note:''});
    st.sets=st.sets.filter(x=>x[0]!==se.id).concat(sets.map(x=>[se.id,x.ex,x.name,x.i+1,x.kg,x.r,x.rir,x.note]));LS.set('state',st);ingest(st);
    enqueue('saveSession',[JSON.stringify(payload)],'s-'+se.id);
    S.session=null;S.inSession=false;S.sheet=null;S.tab='heute';lastKey='';persistSession();toast(`${PLAN[se.type].n} gespeichert · ${sm.sets} ${sm.sets===1?'Satz':'Sätze'}`)},
@@ -1600,8 +1739,9 @@ const A={
 /** Weicher Übergang zwischen Ansichten, wo das Handy es kann. Kachel und Detail teilen sich den Namen vt-… */
 function withVT(fn){if(document.startViewTransition&&!matchMedia('(prefers-reduced-motion: reduce)').matches){try{const t=document.startViewTransition(fn);[t.ready,t.finished,t.updateCallbackDone].forEach(p=>p&&p.catch(()=>{}));return}catch(e){}}fn()}
 document.addEventListener('click',e=>{const t=e.target.closest('[data-act]');if(!t)return;const f=A[t.dataset.act];if(f){e.preventDefault();try{if(navigator.vibrate&&t.dataset.act!=='close'&&(!navigator.userActivation||navigator.userActivation.isActive))navigator.vibrate(6)}catch(x){}f(t.dataset,e)}});
-document.addEventListener('input',e=>{const t=e.target;if(t.dataset&&t.dataset.input==='note'&&S.session){curEx().note=t.value;persistSession()}});
+document.addEventListener('input',e=>{const t=e.target;if(t.id==='cmp-x'&&S.sheet){S.sheet.x=+t.value;const a=document.querySelector('.cmp-a'),l=document.querySelector('.cmp-l');if(a)a.style.clipPath='inset(0 '+(100-t.value)+'% 0 0)';if(l)l.style.left=t.value+'%';return}if(t.dataset&&t.dataset.input==='note'&&S.session){curEx().note=t.value;persistSession()}});
 document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.classList&&e.target.classList.contains('tap')){e.preventDefault();e.target.click();return}if(e.key==='Escape'&&S.sheet){S.sheet=null;render()}if(e.key==='Enter'&&e.target.id==='w-input')A.savew();if(e.key==='Enter'&&e.target.id==='u-input')A.usave();if(e.key==='Enter'&&(e.target.id==='x-k'||e.target.id==='x-t'))A.xsave()});
+document.addEventListener('change',e=>{const t=e.target;if(t.dataset&&t.dataset.sel&&S.sheet&&S.sheet.type==='fotos'){S.sheet[t.dataset.sel]=t.value;S.sheet.confirm=null;render()}});
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){tick();flush();if(S.state&&!S.inSession&&!S.sheet)reload(true)}});
 let rz;window.addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(mountCharts,120)});
 
@@ -1627,6 +1767,7 @@ appEl=document.getElementById('app');
   if(!LS.get('conf',null)){appEl.innerHTML=vSetup();return}
   const cached=LS.get('state',null);
   if(cached){ingest(cached);if(S.session)S.inSession=true;render()}
+  loadFotos().then(()=>{if(S.state)render()});
   try{const st=JSON.parse(await api('getState'));LS.set('state',st);ingest(st);if(S.session)S.inSession=true;render();flush();hausPending()}
   catch(e){if(!cached)appEl.innerHTML=`<div class="boot"><div class="mark">Kom<span>pass</span></div><p class="sub" style="max-width:300px">Die Daten konnten nicht geladen werden: ${esc(e.message||e)}</p><button class="btn btn-p" onclick="location.reload()">Erneut versuchen</button>${e.auth?'<button class="btn btn-s" onclick="resetLink()">Neu verbinden</button>':''}</div>`;else toast(e.auth?'Schlüssel ungültig. Unter Einstellungen neu verbinden.':'Offline: zeige den letzten Stand',true)}
 })();
