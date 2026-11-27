@@ -1005,6 +1005,7 @@ function coachAnswer(q){
 }
 
 /* ============ Startseite: Cockpit ============ */
+const hmAt=ms=>{try{const p=new Intl.DateTimeFormat('en-GB',{hour:'2-digit',minute:'2-digit',hourCycle:'h23',timeZone:'Europe/Berlin'}).formatToParts(new Date(ms));const g=t=>((p.find(x=>x.type===t)||{}).value||'00').padStart(2,'0');return g('hour')+':'+g('minute')}catch(e){const d=new Date(ms);return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}};
 const hourNow=()=>{try{const p=new Intl.DateTimeFormat('en-GB',{hour:'2-digit',hourCycle:'h23',timeZone:'Europe/Berlin'}).formatToParts(new Date()).find(x=>x.type==='hour');const h=p?parseInt(p.value,10):NaN;return isNaN(h)?new Date().getHours():h%24}catch(e){return new Date().getHours()}};
 const kraftWoche=()=>SESS.filter(x=>x.d>=monday(TODAY)&&x.d<=TODAY).length;
 /** Lage des Tages: was erledigt ist und was noch offen ist */
@@ -1344,6 +1345,19 @@ function vEssen(){
 /* ============ Session ============ */
 /** Kurzfassung: je eine Übung für Brust, Rücken, Beine und Schultern, je 2 Sätze. Etwa 30 Minuten. */
 function shortList(t){const out=[];for(const m of ['Brust','Rücken','Beine','Schultern']){const id=PLAN[t].ex.find(i=>EX[i].m===m&&!out.includes(i));if(id)out.push(id)}return out.length>=3?out:PLAN[t].ex.slice(0,4)}
+/** Für die spätere Auswertung: Reihenfolge der Sätze, echte Pausen und ob eine Übung allein oder im Wechsel lief. */
+/** Vorschlag für den Beginn: Uhrzeit aus dem Kalender, sonst jetzt minus Dauer auf die Viertelstunde. */
+function actStart(k,d,min){const ev=k==='F'?Coach.eventsOn(EVENTS,d,'fussball')[0]:null;if(ev&&ev.h&&/^\d{1,2}:\d{2}/.test(ev.h))return ev.h.slice(0,5).padStart(5,'0');
+  const q=15*60000;return hmAt(Math.floor((Date.now()-min*60000)/q)*q)}
+function zeitAblauf(sets){
+  const ch=sets.filter(x=>x.t).sort((a,b)=>a.t-b.t);
+  ch.forEach((x,n)=>{x.ord=n+1;const pr=ch[n-1];x.pause=pr?Math.round((x.t-pr.t)/1000):null;x.geplant=pr&&pr._p!=null?pr._p:null;
+    const pe=ch.slice(0,n).reverse().find(y=>y._e===x._e);x.pauseEx=pe?Math.round((x.t-pe.t)/1000):null});
+  const ab={};new Set(ch.map(x=>x._e)).forEach(e=>{const m=ch.filter(x=>x._e===e),a=m[0].ord,b=m[m.length-1].ord;
+    const o=[...new Set(ch.filter(x=>x.ord>a&&x.ord<b&&x._e!==e).map(x=>x.name))];ab[e]=o.length?'im Wechsel mit '+o.join(', '):'isoliert'});
+  sets.forEach(x=>{x.ablauf=ab[x._e]||'';delete x._p;delete x._e});
+  return sets;
+}
 function startSession(t,short,mode){
   const plan=PLAN[t];const list=short?shortList(t):plan.ex;
   // mode: 'light' = ein Satz weniger, 10 % leichter; 'deload' = halbe Sätze, gleiche Gewichte, keine Steigerung
@@ -1557,6 +1571,7 @@ function vSheet(){
     body=`<div class="sheet-h"><div><div class="eyebrow">${fmtD(sh.d)}</div><h3>${k==='F'?'Fußball':'Laufen'}</h3></div><button class="iconbtn" data-act="close" aria-label="Schließen">${ic('x',22)}</button></div>
     <div class="seg" role="tablist" aria-label="Art">${[['F','Fußball'],['L','Laufen']].map(([x,l])=>`<button role="tab" aria-selected="${k===x}" class="${k===x?'on':''}" data-act="actset" data-f="k" data-v="${x}">${l}</button>`).join('')}</div>
     <div class="chips">${[[TODAY,'Heute'],[addD(TODAY,-1),'Gestern']].map(([d,l])=>`<button class="${sh.d===d?'on':''}" data-act="actset" data-f="d" data-v="${d}">${l}</button>`).join('')}</div>
+    <label class="fld">Beginn<input type="time" id="act-h" value="${esc(sh.h||'')}"></label>
     <div class="two"><div class="step"><button data-act="actstep" data-f="min" data-v="-5" aria-label="5 Minuten weniger">${ic('minus',20,2.5)}</button><div class="sv"><b>${sh.min}</b><small>Minuten</small></div><button data-act="actstep" data-f="min" data-v="5" aria-label="5 Minuten mehr">${ic('plus',20,2.5)}</button></div>
       ${k==='L'?`<div class="step"><button data-act="actstep" data-f="km" data-v="-0.5" aria-label="500 Meter weniger">${ic('minus',20,2.5)}</button><div class="sv"><b>${nf(sh.km)}</b><small>km</small></div><button data-act="actstep" data-f="km" data-v="0.5" aria-label="500 Meter mehr">${ic('plus',20,2.5)}</button></div>`:'<div></div>'}</div>
     ${k==='L'&&sh.km>0?`<div class="sub">Pace ${fmtT(sh.min*60/sh.km)} min/km</div>`:''}
@@ -1733,14 +1748,16 @@ const A={
  xstep:d=>{const i=document.getElementById('x-k');const cur=parseInt(i.value,10);S.sheet.k=Math.max(0,(isNaN(cur)?S.sheet.k:cur)+ +d.v);S.sheet.t=document.getElementById('x-t').value;i.value=S.sheet.k},
  xsave:()=>{const k=parseInt(document.getElementById('x-k').value,10),t=document.getElementById('x-t').value.trim()||'Extra';if(!(k>0&&k<5000))return;S.day.extras.push({t:t.slice(0,40),k});S.sheet=null;saveDay();render()},
  xdel:d=>{S.day.extras.splice(+d.i,1);saveDay();render()},
- act:d=>{const k=d.k||'F';S.sheet={type:'act',k,d:TODAY,min:k==='F'?90:45,km:k==='L'?10:0,knie:'',note:''};render()},
- actset:d=>{const n=document.getElementById('act-note');if(n)S.sheet.note=n.value;S.sheet[d.f]=d.f==='knie'&&S.sheet.knie===d.v?'':d.v;if(d.f==='k'){S.sheet.min=d.v==='F'?90:45;S.sheet.km=d.v==='L'?(S.sheet.km||10):0}render()},
- actstep:d=>{const n=document.getElementById('act-note');if(n)S.sheet.note=n.value;const f=d.f;S.sheet[f]=Math.max(0,Math.round((S.sheet[f]+ +d.v)*10)/10);render()},
+ act:d=>{const k=d.k||'F',min=k==='F'?90:45;S.sheet={type:'act',k,d:TODAY,min,km:k==='L'?10:0,knie:'',note:'',h:actStart(k,TODAY,min)};render()},
+ actset:d=>{const n=document.getElementById('act-note');if(n)S.sheet.note=n.value;const hh=document.getElementById('act-h');if(hh&&hh.value)S.sheet.h=hh.value;S.sheet[d.f]=d.f==='knie'&&S.sheet.knie===d.v?'':d.v;if(d.f==='k'){S.sheet.min=d.v==='F'?90:45;S.sheet.km=d.v==='L'?(S.sheet.km||10):0}render()},
+ actstep:d=>{const n=document.getElementById('act-note');if(n)S.sheet.note=n.value;const hh=document.getElementById('act-h');if(hh&&hh.value)S.sheet.h=hh.value;const f=d.f;S.sheet[f]=Math.max(0,Math.round((S.sheet[f]+ +d.v)*10)/10);render()},
  actsave:()=>{const sh=S.sheet;const note=(document.getElementById('act-note')||{}).value||'';if(!sh.min)return;
    const id=(sh.k==='F'?'f-':'l-')+sh.d+'-'+Date.now().toString(36).slice(-5);
    const row={id,d:sh.d,plan:sh.k,min:sh.min,note:note.trim(),knie:sh.knie,km:sh.k==='L'?sh.km:null};
+   const hv=((document.getElementById('act-h')||{}).value||sh.h||'').trim(),t0=/^\d{2}:\d{2}$/.test(hv)?new Date(sh.d+'T'+hv+':00').getTime():NaN;
+   const zeit=isNaN(t0)?{}:{start:t0,end:t0+sh.min*60000};
    const st=S.state;st.sessions.push(row);LS.set('state',st);
-   enqueue('saveSession',[JSON.stringify(Object.assign({sets:[]},row))],'a-'+id);
+   enqueue('saveSession',[JSON.stringify(Object.assign({sets:[],art:sh.k==='F'?'Fußball':'Laufen'},zeit,row))],'a-'+id);
    S.sheet=null;ingest(st);if(sh.d===TODAY&&!S.day.fixed&&S.day.type!=='t'){S.day.type='t';saveDay()}render();toast((sh.k==='F'?'Fußball':'Laufen')+' gespeichert'+(sh.d===TODAY?' · heute ist Trainingstag':''))},
  umfang:()=>{const ul=UMF.length?UMF[UMF.length-1]:null;S.sheet={type:'umfang',v:ul?ul[1]:95};render()},
  ustep:d=>{const i=document.getElementById('u-input');const cur=parseFloat(String(i.value).replace(',','.'));S.sheet.v=Math.round(((isNaN(cur)?S.sheet.v:cur)+ +d.v*0.5)*10)/10;i.value=nf(S.sheet.v)},
@@ -1766,13 +1783,13 @@ const A={
  pick:d=>{curEx().act=+d.i;persistSession();render()},
  w:d=>{const E=curEx(),i=+d.i;const inc=0.5;const nv=Math.max(0,Math.round((E.sets[i].w+ +d.v*inc)*100)/100);for(let k=i;k<E.sets.length;k++)if(!E.sets[k].done)E.sets[k].w=nv;persistSession();render()},
  r:d=>{const E=curEx(),s=E.sets[+d.i],st=exOf(E).u==='s'?5:1;s.r=Math.max(0,Math.min(st>1?300:40,s.r+ +d.v*st));persistSession();render()},
- done:d=>{primeAudio();const se=S.session,E=curEx(),i=+d.i;E.sets[i].done=true;E.act=null;
+ done:d=>{primeAudio();const se=S.session,E=curEx(),i=+d.i;E.sets[i].done=true;E.sets[i].t=Date.now();E.act=null;se.last={e:se.cur,i};
    const more=E.sets.some(s=>!s.done)||se.cur<se.ex.length-1;
-   if(more){const sec=E.alt&&!E.aid?90:exOf(E).rest;buzzed=false;se.rest={end:Date.now()+sec*1000,total:sec,next:nextLabel()}}else se.rest=null;
+   if(more){const sec=E.alt&&!E.aid?90:exOf(E).rest;buzzed=false;se.rest={end:Date.now()+sec*1000,total:sec,next:nextLabel()};E.sets[i].p=sec}else se.rest=null;
    persistSession();render()},
- undo:d=>{const E=curEx();E.sets[+d.i].done=false;E.sets[+d.i].rir=null;E.act=+d.i;persistSession();render()},
+ undo:d=>{const E=curEx();E.sets[+d.i].done=false;E.sets[+d.i].rir=null;delete E.sets[+d.i].t;delete E.sets[+d.i].p;E.act=+d.i;persistSession();render()},
  rir:d=>{curEx().sets[+d.i].rir=+d.v;persistSession();render()},
- restadd:()=>{const r=S.session.rest;r.end+=15000;r.total+=15;buzzed=false;const el=document.getElementById('rest');if(el)el.classList.remove('over');persistSession();tick()},
+ restadd:()=>{const r=S.session.rest;r.end+=15000;r.total+=15;const lz=S.session.last,ls=lz&&S.session.ex[lz.e]&&S.session.ex[lz.e].sets[lz.i];if(ls&&ls.p!=null)ls.p+=15;buzzed=false;const el=document.getElementById('rest');if(el)el.classList.remove('over');persistSession();tick()},
  restskip:()=>{S.session.rest=null;const E=curEx();if(E.sets.every(s=>s.done)&&S.session.cur<S.session.ex.length-1){S.session.cur++;lastKey=''}persistSession();render()},
  swap:()=>{S.sheet={type:'swap'};render()},
  doswap:d=>{const E=curEx();E.alt=d.n||null;E.aid=E.alt?EXN[E.alt.toLowerCase()]||null:null;
@@ -1784,8 +1801,11 @@ const A={
  finish:()=>{S.sheet={type:'finish'};render()},
  discard:()=>{if(!S.sheet.confirm){S.sheet.confirm=true;render();return}S.session=null;S.inSession=false;S.sheet=null;S.tab='heute';lastKey='';persistSession();toast('Einheit verworfen')},
  save:()=>{const se=S.session,sm=summary();
-   const sets=[];for(const E of se.ex){const exId=E.alt?'alt:'+E.alt:E.id;E.sets.filter(s=>s.done).forEach((s,k)=>sets.push({id:se.id+'-'+exId+'-'+k,ex:exId,name:E.alt||EX[E.id].n,i:k,kg:s.w,r:s.r,rir:s.rir,note:k===0?E.note:''}))}
-   const payload={id:se.id,d:TODAY,plan:se.type+(se.mode==='deload'?'-E':''),min:sm.min,note:'',sets};
+   const sets=[];se.ex.forEach((E,ei)=>{const exId=E.alt?'alt:'+E.alt:E.id;E.sets.filter(s=>s.done).forEach((s,k)=>sets.push({id:se.id+'-'+exId+'-'+k,ex:exId,name:E.alt||EX[E.id].n,i:k,kg:s.w,r:s.r,rir:s.rir,note:k===0?E.note:'',t:s.t||null,_p:s.p,_e:ei}))});
+   zeitAblauf(sets);
+   const tEnd=Math.max(0,...sets.map(x=>x.t||0))||Date.now();
+   const art=se.mode==='deload'?'Entlastung':se.mode==='light'?'leichter':se.short?'Kurzfassung':'normal';
+   const payload={id:se.id,d:TODAY,plan:se.type+(se.mode==='deload'?'-E':''),min:sm.min,note:'',start:se.start,end:tEnd,art,sets};
    const st=S.state;st.sessions=st.sessions.filter(s=>s.id!==se.id);st.sessions.push({id:se.id,d:TODAY,plan:se.type+(se.mode==='deload'?'-E':''),min:sm.min,note:''});
    st.sets=st.sets.filter(x=>x[0]!==se.id).concat(sets.map(x=>[se.id,x.ex,x.name,x.i+1,x.kg,x.r,x.rir,x.note]));LS.set('state',st);ingest(st);
    enqueue('saveSession',[JSON.stringify(payload)],'s-'+se.id);
