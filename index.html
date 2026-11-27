@@ -794,7 +794,7 @@ function vHeute(){
     </article>
     ${fplan?`<article class="card tap"${tapTo('essen','Essen öffnen')}>
       <div class="card-h"><span class="eyebrow">Essen · ${S.day.type==='t'?'Trainingstag':'Ruhetag'}</span>${goArrow()}</div>
-      <div class="wrow" style="align-items:baseline"><div class="big">${nf(ft.tot,0)}<small>von ${nf(tg[0],0)} kcal</small></div><div class="sub">${ft.n} von ${fplan.meals.length} Mahlzeiten</div></div>
+      <div><div class="big">${nf(ft.tot,0)}<small>kcal</small></div><div class="sub">Ziel ${nf(tg[0],0)} · ${ft.n} von ${fplan.meals.length} Mahlzeiten</div></div>
       ${kcalBar(ft,tg)}
       ${!allEaten&&!ft.xk?`<button class="btn btn-s wide sm" data-act="asplan">${ic('check',18,2.5)}Alles wie geplant</button>`:''}
       ${nextSupp?`<div class="sub" style="display:flex;gap:8px;align-items:flex-start">${ic('drop',18)}<span><b style="color:var(--ink);font-weight:600">${esc(nextSupp.time)}:</b> ${nextSupp.items.filter(x=>!S.day.supps[x.id]).map(x=>esc(x.name)).join(', ')}</span></div>`:''}
