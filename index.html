@@ -57,6 +57,13 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .sec-t small{font-size:12px;color:var(--ink-3)}
 .card{background:var(--surface);border-radius:20px;padding:16px;display:grid;gap:12px;box-shadow:var(--shadow)}
 .card-h{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.tap{cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .12s ease,box-shadow .12s ease;outline:none}
+.tap:active:not(:has(button:active)){transform:scale(.985)}
+.tap:focus-visible{box-shadow:0 0 0 2px var(--accent)}
+.go{display:inline-flex;align-items:center;gap:8px;color:var(--ink-3);flex:none}
+.slab .go{color:inherit;opacity:.7}
+.coach.tap{grid-template-columns:auto 1fr auto;align-items:center}
+button.chip{cursor:pointer}
 .sub{font-size:14px;color:var(--ink-2)}
 .link{color:var(--accent-text);font-weight:500;font-size:14px;min-height:32px;padding:0 4px}
 .chip{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 12px;border-radius:14px;background:var(--surface);font-size:13px;font-weight:500;color:var(--ink-2);box-shadow:var(--shadow);white-space:nowrap}
@@ -380,6 +387,8 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .coach.feier{grid-template-columns:20px 1fr;gap:12px;align-items:start}
 .coach.feier>div{display:grid;gap:2px}
 .coach.feier .ic{margin-top:1px}
+.coach.feier.tap{grid-template-columns:20px 1fr 18px}
+.coach.feier.tap .go{align-self:center}
 .coach.c-warn.feier .ic{color:var(--warn)}
 .slab-btns{display:grid;gap:8px}
 .btn-slab2{background:var(--slab-2);color:var(--slab-ink);min-height:44px;border-radius:14px;font-size:15px}
@@ -696,7 +705,7 @@ function goalBar(t){
   return `<div class="goal" role="img" aria-label="Von ${nf(s)} auf ${nf(z)} kg, ${nf(done,0)} Prozent geschafft">
     <div class="goal-t"><i style="width:${done}%"></i><b style="left:${plan}%"></b></div>
     <div class="goal-l"><span>${nf(s)} kg</span><span>${nf(z)} kg</span></div></div>`}
-function weekCard(w,title){
+function weekCard(w,title,tap){
   const kw=isoWeek(w.von);const sp=[];if(w.fussball)sp.push(w.fussball+' × Fußball');if(w.laufen)sp.push(w.laufen+' × Laufen');
   const lines=[];
   if(w.delta!=null)lines.push(`Wochentief ${nf(w.tief)} kg, Plan ${nf(w.plan)} kg: ${Math.abs(w.delta)<0.25?'genau im Plan':w.delta<0?nf(-w.delta)+' kg vorn':nf(w.delta)+' kg hinten'}.`);
@@ -704,8 +713,8 @@ function weekCard(w,title){
   if(w.extraKcal)lines.push(`Extras zusammen ${nf(w.extraKcal,0)} kcal${w.feiern.length?', Feier: '+w.feiern.join(', '):''}.`);
   else if(w.feiern.length)lines.push('Feier: '+w.feiern.join(', ')+'.');
   if(w.bauch)lines.push(`Bauchumfang ${nf(w.bauch.cm)} cm${w.bauch.delta!=null?' ('+sgn(w.bauch.delta)+')':''}.`);
-  return `<article class="card">
-    <div class="card-h"><span class="eyebrow">${esc(title||'Wochenrückblick')} · KW ${kw}</span><span class="sub" style="font-size:13px">${dm(w.von)} bis ${dm(w.bis)}</span></div>
+  return `<article class="card${tap?' tap':''}"${tap?tapTo('fortschritt','Fortschritt öffnen'):''}>
+    <div class="card-h"><span class="eyebrow">${esc(title||'Wochenrückblick')} · KW ${kw}</span><span class="go"><span class="sub" style="font-size:13px">${dm(w.von)} bis ${dm(w.bis)}</span>${tap?ic('right',18):''}</span></div>
     <div class="kv"><div><span>Schnitt</span><b>${w.schnitt!=null?nf(w.schnitt):'?'}</b>${w.schnitt!=null&&w.vorwoche!=null?`<em class="${w.schnitt-w.vorwoche<-0.05?'dn':w.schnitt-w.vorwoche>0.05?'up':'eq'}">${sgn(w.schnitt-w.vorwoche)}</em>`:''}</div>
       <div><span>Kraft</span><b>${w.kraft}<small> von 2</small></b></div><div><span>Essen</span><b>${w.essenTage}<small> von 7</small></b></div></div>
     ${lines.length?`<p class="sub" style="margin:0">${esc(lines.join(' '))}</p>`:''}
@@ -720,13 +729,16 @@ function weekData(mon){const pl=curPlan();return Coach.week({weights:S.state.wei
 function feierCard(){
   const nx=Coach.nextFeier(EVENTS,TODAY),af=Coach.afterFeier(EVENTS,TODAY);
   if(nx&&nx.in<=1){const ev=EVENTS.find(e=>e.s===nx.s&&e.t===nx.t)||{};
-    return `<div class="coach c-warn feier">${ic('glass',20)}<div><b>${nx.in===0?'Heute':'Morgen'}${ev.h?' um '+ev.h:''}: ${esc(nx.t)}</b><span>${esc(Coach.FEIER.vorher)}</span></div></div>`}
-  if(af)return `<div class="coach c-neutral feier">${ic('glass',20)}<div><b>Nach ${esc(af.t)}</b><span>${esc(Coach.FEIER.danach)}</span></div></div>`;
+    return `<div class="coach c-warn feier tap"${tapTo('essen','Essen öffnen')}>${ic('glass',20)}<div><b>${nx.in===0?'Heute':'Morgen'}${ev.h?' um '+ev.h:''}: ${esc(nx.t)}</b><span>${esc(Coach.FEIER.vorher)}</span></div>${goArrow()}</div>`}
+  if(af)return `<div class="coach c-neutral feier tap"${tapTo('essen','Essen öffnen')}>${ic('glass',20)}<div><b>Nach ${esc(af.t)}</b><span>${esc(Coach.FEIER.danach)}</span></div>${goArrow()}</div>`;
   return''}
 function sportToday(){const ev=Coach.eventsOn(EVENTS,TODAY,'fussball')[0];const done=ACT.find(a=>a.d===TODAY&&a.type==='F');
   if(!ev||done)return'';
-  return `<article class="card sportc"><div class="sport-h">${ic('ball',24)}<div><div class="mid">Heute Fußball${ev.h?' um '+ev.h:''}</div><div class="sub">Zählt als Trainingstag. Trag danach kurz ein, wie es dem Knie ging.</div></div></div>
+  return `<article class="card sportc tap" data-act="act" data-k="F" role="button" tabindex="0" aria-label="Fußball eintragen"><div class="sport-h">${ic('ball',24)}<div><div class="mid">Heute Fußball${ev.h?' um '+ev.h:''}</div><div class="sub">Zählt als Trainingstag. Trag danach kurz ein, wie es dem Knie ging.</div></div></div>
     <button class="btn btn-s wide sm" data-act="act" data-k="F">Nach dem Spiel eintragen</button></article>`}
+/** Macht ein Element antippbar: führt zu einem Bereich (tab) oder löst eine Aktion aus. Knöpfe darin behalten ihre eigene Aktion. */
+function tapTo(tab,label,r){return ` data-act="tab" data-tab="${tab}"${r?` data-r="${r}"`:''} role="link" tabindex="0" aria-label="${esc(label)}"`}
+const goArrow=()=>`<span class="go" aria-hidden="true">${ic('right',18)}</span>`;
 function bauchDue(){const mon=monday(TODAY);const last=UMF.length?UMF[UMF.length-1]:null;return(!last||last[0]<mon)&&dO(TODAY).getUTCDay()>=1&&dO(TODAY).getUTCDay()<=3}
 
 function vHeute(){
@@ -743,7 +755,7 @@ function vHeute(){
   let phaseCard='';
   if(next&&diffD(TODAY,next.s)<=14){
     const a=ph?weekAvg(ph.s,addD(ph.s,6)):null,b=weekAvg(addD(TODAY,-6),TODAY);const weeks=ph?diffD(ph.s,TODAY)/7:0;
-    phaseCard=`<article class="card"><div class="eyebrow">${diffD(TODAY,next.s)===1?'Morgen':'In '+diffD(TODAY,next.s)+' Tagen'}</div>
+    phaseCard=`<article class="card tap"${tapTo('essen','Essen öffnen')}><div class="card-h"><span class="eyebrow">${diffD(TODAY,next.s)===1?'Morgen':'In '+diffD(TODAY,next.s)+' Tagen'}</span>${goArrow()}</div>
       <div class="mid">${esc(next.n)} ab ${WDL[dO(next.s).getUTCDay()]}, ${dm(next.s)}</div>
       ${a!=null&&b!=null&&weeks>0?`<p class="sub" style="margin:0">${esc(ph.n)} bisher: ${sgn(b-a)} kg im Wochenschnitt (${sgn((b-a)/weeks,2)} kg pro Woche). Danach gilt dein Plan aus „${esc(next.tab)}“.</p>`:''}
       ${nplan&&nplan.targets.t?`<div class="kv"><div><span>Trainingstag</span><b>${nf(nplan.targets.t[0],0)}</b></div><div><span>Ruhetag</span><b>${nf((nplan.targets.r||nplan.targets.t)[0],0)}</b></div><div><span>Eiweiß</span><b>${nf(nplan.targets.t[1],0)} g</b></div></div>`:''}
@@ -753,15 +765,15 @@ function vHeute(){
   return `
   <header class="hdr gut">
     <div class="hdr-row"><div class="eyebrow">${dlong(TODAY)}</div><button class="iconbtn" style="margin:-12px -10px -12px 0" data-act="settings" aria-label="Einstellungen">${ic('gear',22)}</button></div>
-    <div class="hdr-row"><h1 class="h1">Heute</h1>${ph?`<span class="chip"><i></i>${esc(ph.n)} · Woche ${wk}${wkTot?' von '+wkTot:''}</span>`:''}</div>
+    <div class="hdr-row"><h1 class="h1">Heute</h1>${ph?`<button class="chip" data-act="tab" data-tab="gewicht" aria-label="${esc(ph.n)}, Woche ${wk}: Gewicht öffnen"><i></i>${esc(ph.n)} · Woche ${wk}${wkTot?' von '+wkTot:''}</button>`:''}</div>
   </header>
   <div class="stack gut">
     ${feierCard()}
-    <article class="slab">
+    <article class="slab tap"${tapTo('training','Training öffnen')}>
       ${done?`<div class="eyebrow">Erledigt</div><h2 class="slab-title">${PLAN[done.type].n}</h2>
         <div class="slab-done">${ic('check',20,2.5)}<span>${sum(Object.values(done.ex).map(e=>e.reps.length))} Sätze${done.min?' in '+done.min+' min':''}. Nächstes Mal: ${PLAN[done.type==='A'?'B':'A'].n}.</span></div>
         <button class="btn btn-slab" data-act="tab" data-tab="training">Training ansehen</button>`:`
-        <div class="eyebrow">${Coach.eventsOn(EVENTS,TODAY,'fussball').length||ACT.some(a=>a.d===TODAY)?'Als Nächstes, heute ist schon Sport':'Heute dran'}${lt?` · letzte ${nt} am ${dm(lt.d)}`:''}</div>
+        <div class="card-h"><div class="eyebrow">${Coach.eventsOn(EVENTS,TODAY,'fussball').length||ACT.some(a=>a.d===TODAY)?'Als Nächstes, heute ist schon Sport':'Heute dran'}${lt?` · letzte ${nt} am ${dm(lt.d)}`:''}</div>${goArrow()}</div>
         <h2 class="slab-title">${plan.n}</h2>
         <div class="slab-facts"><span><b>${plan.ex.length}</b>Übungen</span><span><b>${sets}</b>Sätze</span><span><b>${Math.round(sets*2.5/5)*5}</b>min</span></div>
         ${focus.length?`<ul class="focus">${focus.map(f=>`<li class="f-${f.t}">${esc(f.x)}</li>`).join('')}</ul>`:''}
@@ -769,8 +781,8 @@ function vHeute(){
         ${S.session?'':`<button class="btn btn-slab2" data-act="start" data-t="${nt}" data-short="1">${ic('bolt',18)}Wenig Zeit · 30 min</button>`}</div>`}
     </article>
     ${sportToday()}
-    <article class="card">
-      <div class="card-h"><span class="eyebrow">Gewicht</span><button class="link" data-act="weigh">${w&&w.v!=null?'Ändern':'Eintragen'}</button></div>
+    <article class="card tap"${tapTo('gewicht','Gewicht öffnen',t?'ziel':'')}>
+      <div class="card-h"><span class="eyebrow">Gewicht</span><span class="go"><button class="link" data-act="weigh">${w&&w.v!=null?'Ändern':'Eintragen'}</button>${ic('right',18)}</span></div>
       <div class="wrow">
         <div><div class="big">${w&&w.v!=null?nf(w.v):'?'}<small>kg</small></div>
           <div class="sub">${w&&w.v!=null?(w.src==='eufy'?'von der Waage':'heute'):'noch nicht gewogen'}${tr!=null?' · Trend '+nf(tr)+' kg':''}</div></div>
@@ -780,15 +792,15 @@ function vHeute(){
         ${goalBar(t)}
         ${t.tageBis>0?`<div class="countdown">${ic('flag',16)}<span>Noch <b>${t.tageBis} Tage</b> bis ${esc(t.path.anlass||'zum Ziel')}</span></div>`:''}`:''}
     </article>
-    ${fplan?`<article class="card">
-      <div class="card-h"><span class="eyebrow">Essen · ${S.day.type==='t'?'Trainingstag':'Ruhetag'}</span><button class="link" data-act="tab" data-tab="essen">Öffnen</button></div>
+    ${fplan?`<article class="card tap"${tapTo('essen','Essen öffnen')}>
+      <div class="card-h"><span class="eyebrow">Essen · ${S.day.type==='t'?'Trainingstag':'Ruhetag'}</span>${goArrow()}</div>
       <div class="wrow" style="align-items:baseline"><div class="big">${nf(ft.tot,0)}<small>von ${nf(tg[0],0)} kcal</small></div><div class="sub">${ft.n} von ${fplan.meals.length} Mahlzeiten</div></div>
       ${kcalBar(ft,tg)}
       ${!allEaten&&!ft.xk?`<button class="btn btn-s wide sm" data-act="asplan">${ic('check',18,2.5)}Alles wie geplant</button>`:''}
       ${nextSupp?`<div class="sub" style="display:flex;gap:8px;align-items:flex-start">${ic('drop',18)}<span><b style="color:var(--ink);font-weight:600">${esc(nextSupp.time)}:</b> ${nextSupp.items.filter(x=>!S.day.supps[x.id]).map(x=>esc(x.name)).join(', ')}</span></div>`:''}
     </article>`:''}
-    ${dow>=1&&dow<=2?weekCard(weekData(addD(monday(TODAY),-7)),'Letzte Woche'):''}
-    ${bauchDue()?`<article class="card"><div class="sport-h">${ic('tape',24)}<div><div class="mid">Bauchumfang messen</div><div class="sub">Einmal pro Woche, morgens, auf Nabelhöhe. Sagt mehr als die Fettwerte der Waage.</div></div></div><button class="btn btn-s wide sm" data-act="umfang">Jetzt eintragen</button></article>`:''}
+    ${dow>=1&&dow<=2?weekCard(weekData(addD(monday(TODAY),-7)),'Letzte Woche',true):''}
+    ${bauchDue()?`<article class="card tap" data-act="umfang" role="button" tabindex="0" aria-label="Bauchumfang eintragen"><div class="sport-h">${ic('tape',24)}<div><div class="mid">Bauchumfang messen</div><div class="sub">Einmal pro Woche, morgens, auf Nabelhöhe. Sagt mehr als die Fettwerte der Waage.</div></div></div><button class="btn btn-s wide sm" data-act="umfang">Jetzt eintragen</button></article>`:''}
     ${phaseCard}
     <div style="display:flex;justify-content:center"><span class="chip" id="syncchip"><i></i>Alles im Sheet</span></div>
   </div>`;
@@ -1260,7 +1272,7 @@ setInterval(tick,250);
 
 /* ============ Aktionen ============ */
 const A={
- tab:d=>{S.tab=d.tab;S.sheet=null;render();const sc=appEl.querySelector('.scroll');if(sc)sc.scrollTop=0},
+ tab:d=>{if(d.r){S.range=d.r;LS.set('range',d.r)}S.tab=d.tab;S.sheet=null;render();const sc=appEl.querySelector('.scroll');if(sc)sc.scrollTop=0},
  settings:()=>{S.sheet={type:'settings'};render()},
  reload:()=>{S.sheet=null;reload(false)},
  eufy:async()=>{toast('Frage die Waage ab …');try{const r=await api('eufyAbrufen');await reload(true);toast(String(r))}catch(e){toast('Abruf fehlgeschlagen: '+(e.message||e),true)}},
@@ -1334,7 +1346,7 @@ const A={
 };
 document.addEventListener('click',e=>{const t=e.target.closest('[data-act]');if(!t)return;const f=A[t.dataset.act];if(f){e.preventDefault();f(t.dataset,e)}});
 document.addEventListener('input',e=>{const t=e.target;if(t.dataset&&t.dataset.input==='note'&&S.session){curEx().note=t.value;persistSession()}});
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&S.sheet){S.sheet=null;render()}if(e.key==='Enter'&&e.target.id==='w-input')A.savew();if(e.key==='Enter'&&e.target.id==='u-input')A.usave();if(e.key==='Enter'&&(e.target.id==='x-k'||e.target.id==='x-t'))A.xsave()});
+document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.classList&&e.target.classList.contains('tap')){e.preventDefault();e.target.click();return}if(e.key==='Escape'&&S.sheet){S.sheet=null;render()}if(e.key==='Enter'&&e.target.id==='w-input')A.savew();if(e.key==='Enter'&&e.target.id==='u-input')A.usave();if(e.key==='Enter'&&(e.target.id==='x-k'||e.target.id==='x-t'))A.xsave()});
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){tick();flush();if(S.state&&!S.inSession&&!S.sheet)reload(true)}});
 let rz;window.addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(mountCharts,120)});
 
