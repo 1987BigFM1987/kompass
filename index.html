@@ -527,6 +527,10 @@ a.btn{text-decoration:none}
 .wpick button.on{background:var(--accent);color:var(--accent-ink)}.wpick button.on small,.wpick button.on i{color:inherit;opacity:.85}
 .wpick button[disabled]{opacity:.35}
 .tbl2{display:grid}
+.slp{display:grid;gap:10px}
+.slrow{display:grid;grid-template-columns:44px 1fr 40px 56px;gap:10px;align-items:center;font-size:14px}
+.slrow b{text-align:right;font-variant-numeric:tabular-nums}.slrow small{text-align:right;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.slbar{display:flex;height:10px;border-radius:5px;overflow:hidden;background:var(--line)}.slbar i{display:block;height:100%;background:var(--route)}
 .tbrow{display:grid;grid-template-columns:48px 1fr 16px;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line);text-align:left;width:100%}
 .tbrow:first-child{border-top:0}
 .tbrow img,.tbph{width:48px;height:64px;border-radius:10px;object-fit:cover;background:var(--surface-2);display:grid;place-items:center;color:var(--ink-3)}
@@ -890,6 +894,19 @@ const goArrow=()=>`<span class="go" aria-hidden="true">${ic('right',18)}</span>`
 function bauchDue(){const mon=monday(TODAY);const last=UMF.length?UMF[UMF.length-1]:null;return(!last||last[0]<mon)&&dO(TODAY).getUTCDay()>=1&&dO(TODAY).getUTCDay()<=3}
 
 /* ============ Begleiter: Erholung, Wochenplan, Entlastung ============ */
+/* Samsung Health: Schlaf und Puls kommen über HC Webhook ins Sheet */
+const GH=()=>(S.state&&S.state.gesundheit)||[];
+const ghAt=d=>GH().find(x=>x.d===d);
+const hmin=m=>{const r=Math.round(m);return Math.floor(r/60)+':'+String(r%60).padStart(2,'0')};
+function rhrBase(){const a=GH().filter(x=>x.d<TODAY&&x.rhr).slice(-14).map(x=>x.rhr).sort((p,q)=>p-q);return a.length>=5?a[Math.floor(a.length/2)]:null}
+/** Schlaf-Stufe für den Erholungs-Check: ab 7 Stunden gut, ab 6 okay, viel Wachzeit zieht eine Stufe ab. */
+function schlafStufe(g){if(!g||!g.schlaf)return null;let v=g.schlaf>=420?2:g.schlaf>=360?1:0;if((g.wach||0)>=45&&v>0)v--;return v}
+function schlafCard(){const g=GH().filter(x=>x.schlaf).slice(-7).reverse();if(!g.length)return '';
+  const mx=Math.max(540,...g.map(x=>x.schlaf));
+  return `<div class="sec-t"><h3>Schlaf und Puls</h3><small>Samsung Health</small></div><article class="card"><div class="slp">${g.map(x=>{const seg=(v,o)=>v>0?`<i style="width:${v/mx*100}%;opacity:${o}"></i>`:'';
+    const rest=x.tief!=null?Math.max(0,x.schlaf-(x.tief||0)-(x.rem||0)):x.schlaf;
+    return `<div class="slrow"><span>${dm(x.d)}</span><span class="slbar" aria-label="${hmin(x.schlaf)} Stunden Schlaf">${seg(x.tief,1)}${seg(x.rem,.6)}${seg(rest,.3)}</span><b>${hmin(x.schlaf)}</b><small>${x.rhr?x.rhr+' bpm':x.nacht?x.nacht+' bpm':''}</small></div>`}).join('')}</div>
+    <p class="sub" style="margin:0;font-size:13px">Dunkel Tiefschlaf, mittel REM, hell leichter Schlaf. Rechts der Ruhepuls${GH().some(x=>x.rhr)?'':' (aus dem Nachtpuls)'}.</p></article>`}
 const CHECKQ=[['schlaf','Schlaf',['schlecht','okay','gut']],['kater','Muskelkater',['stark','etwas','keiner']],['energie','Energie',['wenig','mittel','viel']]];
 /** Erholung aus dem Morgen-Check: 0 bis 6 Punkte, erst wenn alle drei beantwortet sind */
 function readiness(c){c=c||{};if(!CHECKQ.every(([k])=>c[k]!=null))return null;const sc=CHECKQ.reduce((a,[k])=>a+(+c[k]||0),0);return{sc,level:sc<=2?'schwach':sc<=4?'mittel':'gut'}}
@@ -1105,11 +1122,20 @@ function hinweise(L){
   const next=nextPhase(TODAY);if(next&&diffD(TODAY,next.s)<=14)add('neutral','cal',`<b>${esc(next.n)} ab ${dm(next.s)}.</b> Danach gilt dein Plan aus „${esc(next.tab)}“.`,tapTo('essen','Essen öffnen'),5);
   const wm=wpTarget();if(!WP(wm)&&(dO(TODAY).getUTCDay()===0||dO(TODAY).getUTCDay()<=2))add('accent','cal',`<b>${wm>monday(TODAY)?'Plan die neue Woche.':'Plan diese Woche.'}</b> Wähl deine Trainingstage, dann erinnert dich Kompass genau dann.`,` data-act="wplan" data-m="${wm}" role="button" tabindex="0" aria-label="Woche planen"`,dO(TODAY).getUTCDay()===0?1:2);
   if(L.deload.why)add('accent','bolt',`<b>Zeit für eine Entlastungswoche.</b> ${esc(L.deload.why)}.`,` data-act="coach" data-c="training" data-q="deload" role="button" tabindex="0" aria-label="Entlastungswoche ansehen"`,2);
+  {const g=ghAt(TODAY),b=rhrBase();if(g&&g.rhr&&b&&g.rhr>=b+5)add('warn','bolt',`<b>Ruhepuls ${g.rhr}, sonst um ${b}.</b> Dein Körper ist noch mit Erholung beschäftigt, heute lieber leichter trainieren.`,tapTo('training','Training öffnen'),2)}
   if(fotoDue())add('neutral','note','<b>Zeit für Foto und Tagebuch.</b> Ein Foto und ein paar Sätze zu den letzten zwei Wochen.',` data-act="tagebuch" role="button" tabindex="0" aria-label="Foto und Tagebuch"`,(fotoSeit()||0)>=17?2:3);
   return out.sort((a,b)=>a.prio-b.prio).slice(0,2);
 }
-function morgenCheck(){const c=S.day.check;
+function hcCard(sh){const h=S.state.hc||{},hl=h.last?new Date(h.last):null;
+  return `<article class="card"><div class="eyebrow">Samsung Health · über HC Webhook</div>
+    <p class="sub" style="margin:0">${h.err?`<span style="color:var(--warn)">Letzte Lieferung fehlgeschlagen: ${esc(h.err)}</span>`:hl?`Daten kommen an, zuletzt am ${hl.toLocaleDateString('de-DE')} um ${hl.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})}. ${GH().length} Tage mit Schlaf und Puls im Sheet.`:'Noch keine Daten angekommen. Schlaf und Puls landen im Gewichts-Sheet in „App_Gesundheit“ und „App_Puls“, Trainings der Uhr im Trainings-Sheet in „App_Uhr“.'}</p>
+    ${sh.hcUrl?`<label class="fld">Adresse für HC Webhook<input id="hc-url" readonly value="${esc(sh.hcUrl)}"></label>
+      <button class="btn btn-p wide sm" data-act="hccopy">${ic('check',18)}Adresse kopieren</button>
+      <p class="sub" style="margin:0;font-size:13px">In HC Webhook einen Webhook anlegen und die Adresse einfügen. Datenarten: Schlaf, Herzfrequenz, Ruheherzfrequenz, Herzfrequenzvariabilität, Sauerstoffsättigung, Schritte und Training. Alle 30 Minuten senden reicht. Beim Puls am besten Mittelwerte je Minute statt jeder Einzelmessung. Die Adresse enthält deinen Schlüssel, gib sie nicht weiter.</p>`
+      :`<button class="btn btn-s wide sm" data-act="hcurl">${ic('sync',18)}${h.on?'Adresse nochmal anzeigen':'Adresse für HC Webhook erzeugen'}</button>`}</article>`}
+function morgenCheck(){const c=S.day.check,g=ghAt(TODAY),sv=schlafStufe(g);if(c.schlaf==null&&sv!=null)c.schlaf=sv;
   return `<article class="card mcheck"><div class="card-h"><span class="eyebrow">Wie fit bist du heute?</span><span class="sub" style="font-size:12px">3 Tipps</span></div>
+    ${g&&g.schlaf?`<p class="sub" style="margin:0;font-size:13px">Laut Uhr: ${hmin(g.schlaf)} h Schlaf${g.tief?', '+hmin(g.tief)+' h Tiefschlaf':''}${g.rhr?', Ruhepuls '+g.rhr:''}${g.von?', '+g.von+' bis '+g.bis+' Uhr':''}.</p>`:''}
     ${CHECKQ.map(([k,l,o])=>`<div class="mrow3"><span>${l}</span><div class="seg3" role="group" aria-label="${l}">${o.map((t,i)=>`<button class="${c[k]===i?'on v'+i:''}" data-act="chk" data-k="${k}" data-v="${i}" aria-pressed="${c[k]===i}">${t}</button>`).join('')}</div></div>`).join('')}</article>`}
 function vHeute(){
   const ph=phaseAt(TODAY),L=lage(),f=focusNow(L);
@@ -1196,6 +1222,7 @@ function vGewicht(){
     ${body}
     ${bauch}
     ${fotoCard()}
+    ${schlafCard()}
     <div class="sec-t"><h3>Wochen</h3><small>Ø der gewogenen Tage</small></div>
     <article class="card" style="gap:0;padding-block:8px">
       ${weeks.map((x,i)=>{const prev=weeks[i+1];const d=prev&&prev.a!=null&&x.a!=null?x.a-prev.a:null;const fe=Array.from({length:7},(_,j)=>feierOn(addD(x.m,j)));
@@ -1564,7 +1591,8 @@ function vSheet(){
       <p class="sub" style="margin:0">${hs.on?`Verbunden. Der ioBroker holt alle 30 Minuten eine Zusammenfassung für Telegram und das Wandtablet${hl?', zuletzt am '+hl.toLocaleDateString('de-DE')+' um '+hl.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}):''}. Er kann nur lesen.`:'Noch nicht verbunden. Der ioBroker schickt dir dafür einen Link per Telegram. Tipp ihn einfach an.'}</p>
       ${hs.on?`<button class="link" style="justify-self:start" data-act="haustrennen">${sh.confirm?'Wirklich trennen? Nochmal tippen':'Vom Haus trennen'}</button>`:''}</article>
     <article class="card"><div class="eyebrow">Kalender</div>
-      <p class="sub" style="margin:0">${S.state.calErr?`<span style="color:var(--warn)">${esc(S.state.calErr)}</span>`:`Feiern, Urlaub und Fußball kommen aus deinem Google-Kalender über den ioBroker. Gerade bekannt: ${EVENTS.filter(x=>x.art==='feier'&&x.e>=TODAY).length} Feiern in den nächsten acht Wochen.`}</p></article>`;
+      <p class="sub" style="margin:0">${S.state.calErr?`<span style="color:var(--warn)">${esc(S.state.calErr)}</span>`:`Feiern, Urlaub und Fußball kommen aus deinem Google-Kalender über den ioBroker. Gerade bekannt: ${EVENTS.filter(x=>x.art==='feier'&&x.e>=TODAY).length} Feiern in den nächsten acht Wochen.`}</p></article>
+    ${hcCard(sh)}`;
   }
   if(sh.type==='act'){
     const k=sh.k;label=k==='F'?'Fußball eintragen':'Laufen eintragen';
@@ -1764,6 +1792,8 @@ const A={
  usave:()=>{const i=document.getElementById('u-input');const v=parseFloat(String(i.value).replace(',','.'));if(!(v>40&&v<200)){i.focus();return}
    const st=S.state;st.umfang=(st.umfang||[]).filter(u=>u[0]!==TODAY).concat([[TODAY,v]]);LS.set('state',st);ingest(st);S.sheet=null;
    enqueue('saveMeasure',[TODAY,v,''],'u-'+TODAY);toast(`${nf(v)} cm gespeichert`)},
+ hcurl:async()=>{try{const k=await api('hcKoppeln'),c=LS.get('conf',null);S.state.hc=Object.assign({},S.state.hc,{on:true});if(S.sheet&&S.sheet.type==='settings'){S.sheet.hcUrl=c.u+(c.u.includes('?')?'&':'?')+'hc='+encodeURIComponent(k);render()}}catch(e){toast('Adresse nicht erzeugt: '+(e.message||e),true)}},
+ hccopy:async()=>{const u=S.sheet&&S.sheet.hcUrl;if(!u)return;try{await navigator.clipboard.writeText(u);toast('Adresse kopiert. Jetzt in HC Webhook einfügen.')}catch(e){const i=document.getElementById('hc-url');if(i){i.focus();i.select()}toast('Kopieren ging nicht, die Adresse ist markiert.',true)}},
  haustrennen:async()=>{if(!S.sheet.confirm){S.sheet.confirm=true;render();return}try{await api('hausTrennen');S.state.haus={on:false};S.sheet=null;toast('Vom Haus getrennt')}catch(e){toast('Trennen fehlgeschlagen: '+(e.message||e),true)}},
  eat:d=>{const m=S.day.meals[d.m]=S.day.meals[d.m]||{};m.eaten=!m.eaten;saveDay();render()},
  alt:d=>{const m=S.day.meals[d.m]=S.day.meals[d.m]||{};m.alt=+d.k;saveDay();render()},
